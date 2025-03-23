@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사용자 프로필</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/feed.css">
+</head>
+<body>
+  <section style="padding-bottom: 80px;">
+    <div class="profile-header" style="text-align: center; margin-bottom: 20px;">
+      <img id="profile-image" src="https://placehold.co/100x100" alt="프로필 이미지" style="width: 100px; height: 100px; border-radius: 50%;">
+      <h2 id="profile-name">사용자이름</h2>
+      <div style="margin-top: 10px;">
+        <button id="edit-profile-btn" style="display: none;">프로필 수정</button>
+        <button id="logout-btn" onclick="logout()" style="display: none; margin-left: 10px;">로그아웃</button>
+      </div>
+    </div>
+
+    <h3 style="text-align: center;">📸 피드</h3>
+    <div id="feeds" class="grid-feed-wrapper"></div>
+  </section>
+
+  <div class="bottom-nav">
+    <button onclick="location.href='index.html'">🏠</button>
+    <button onclick="alert('🔍 검색 준비중')">🔍</button>
+    <button onclick="location.href='upload.html'" class="plus-btn">➕</button>
+    <button onclick="alert('🎬 릴스 준비중')">🎬</button>
+    <button id="profile-nav-btn" onclick="location.href='profile-feed.html'"><img id="nav-profile-img" src="https://placehold.co/32x32" alt="내 프로필" style="width: 32px; height: 32px; border-radius: 50%;"></button>
+  </div>
+
+  <script>
+    const api = 'https://supermax.kr/feed';
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("userId") || localStorage.getItem("user_id");
+    const myUserId = localStorage.getItem("user_id");
+    const token = localStorage.getItem("token");
+
+    if (!userId || !token) {
+      alert("로그인이 필요합니다.");
+      location.href = "login.html";
+    }
+
+    async function loadUserProfile() {
+  try {
+    const res = await fetch(`${api}/user-info`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id: userId })
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error("서버 응답 오류: " + text);
+    }
+
+    const data = await res.json();
+
+    document.getElementById("profile-name").innerText = data.name || "사용자";
+    document.getElementById("profile-image").src = data.profile_image || "https://placehold.co/100x100";
+    // document.getElementById("nav-profile-img").src = data.profile_image || "https://placehold.co/32x32";
+
+    if (userId === myUserId) {
+      document.getElementById("edit-profile-btn").style.display = "inline-block";
+      document.getElementById("logout-btn").style.display = "inline-block";
+    }
+
+  } catch (e) {
+    console.error("❌ 유저 정보 불러오기 실패", e);
+  }
+}
+
+
+async function loadMyProfileImageForNav() {
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("user_id");
+
+  if (!token || !userId) return;
+
+  try {
+    const res = await fetch("https://supermax.kr/feed/user-info", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ user_id: userId })
+    });
+
+    if (!res.ok) {
+      const html = await res.text();
+      console.warn("❌ 서버 응답 HTML:", html);
+      return;
+    }
+
+    const data = await res.json();
+    document.getElementById("nav-profile-img").src = data.profile_image || "https://placehold.co/32x32";
+  } catch (e) {
+    console.warn("👤 내 프로필 이미지 불러오기 실패", e);
+  }
+}
+
+
+
+    async function loadFeeds() {
+      try {
+        const res = await fetch(`${api}/user-feeds/${userId}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const feeds = await res.json();
+
+        const container = document.getElementById("feeds");
+        container.innerHTML = feeds.map(feed => {
+          let media = '';
+          try {
+            const mediaArray = JSON.parse(feed.media_url);
+            if (Array.isArray(mediaArray) && mediaArray.length > 0) {
+              const url = mediaArray[0];
+              media = url.includes('.mp4')
+                ? `<video src="${url}" muted preload="metadata"></video>`
+                : `<img src="${url}" alt="피드 썸네일">`;
+            }
+          } catch {}
+          return `<div class="thumbnail" onclick="location.href='feed-detail.html?feedId=${feed.id}'">${media}</div>`;
+        }).join('');
+      } catch (e) {
+        console.error("피드 불러오기 실패", e);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_id');
+      location.href = 'login.html';
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+  const token = localStorage.getItem("token");
+  const userId = new URLSearchParams(location.search).get("userId") || localStorage.getItem("user_id");
+
+  // ✅ 여기에 딱 넣어줘!
+  if (!token || !userId) {
+    localStorage.setItem("redirect_after_login", location.href);
+    alert("로그인이 필요합니다.");
+    location.href = "login.html";
+    return;
+  }
+  await loadMyProfileImageForNav();  // ✅ 이게 핵심!
+  await loadUserProfile(); // ← 로그인된 상태면 프로필 정보 불러오기
+  await loadFeeds();       // ← 유저 피드 출력
+});
+
+  </script>
+</body>
+</html>

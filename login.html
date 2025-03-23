@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인 - MaxFeed</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+</head>
+<body>
+
+<h2>로그인</h2>
+<input type="text" id="username" placeholder="아이디">
+<input type="password" id="password" placeholder="비밀번호">
+<button onclick="login()">로그인</button>
+<button onclick="location.href='register.html'">회원가입</button>
+
+<script>
+const api = 'https://supermax.kr/feed';
+
+async function login() {
+  const res = await fetch(`${api}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: document.getElementById('username').value,
+      password: document.getElementById('password').value
+    })
+  });
+
+  const data = await res.json();
+
+  if (res.ok) {
+    // ✅ 여기 안이 로그인 성공 처리 부분이야!
+    // 👇 여기에 이거 넣으면 됨:
+
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user_id', String(data.user_id));
+
+    alert('로그인 성공!');
+
+    const redirectTo = localStorage.getItem("redirect_after_login") || 'index.html';
+    localStorage.removeItem("redirect_after_login");
+    location.href = redirectTo;
+
+  } else {
+    alert('로그인 실패');
+  }
+}
+
+</script>
+
+</body>
+</html>

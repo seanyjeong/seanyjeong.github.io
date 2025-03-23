@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원가입 - MaxFeed</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <style>
+    body {
+      max-width: 400px;
+      margin: 20px auto;
+      text-align: center;
+    }
+    input, select, button {
+      width: 100%;
+      margin: 5px 0;
+    }
+    .phone-verification {
+      display: flex;
+      gap: 10px;
+    }
+    .phone-verification input {
+      flex: 2;
+    }
+    .phone-verification button {
+      flex: 1;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>회원가입</h2>
+
+<label for="username">아이디</label>
+<input type="text" id="username" placeholder="아이디">
+
+<label for="password">비밀번호</label>
+<input type="password" id="password" placeholder="비밀번호">
+
+<label for="name">이름</label>
+<input type="text" id="name" placeholder="이름">
+
+<label for="birth_date">생년월일</label>
+<input type="date" id="birth_date">
+
+<label for="phone">전화번호</label>
+<div class="phone-verification">
+  <input type="text" id="phone" placeholder="전화번호">
+  <button onclick="sendVerification()">인증번호 받기</button>
+</div>
+
+<label for="verification_code">인증번호 입력</label>
+<div class="phone-verification">
+  <input type="text" id="verification_code" placeholder="인증번호">
+  <button onclick="verifyCode()">확인</button>
+</div>
+
+<label for="school">학교</label>
+<input type="text" id="school" placeholder="학교">
+
+<label for="grade">학년</label>
+<input type="text" id="grade" placeholder="학년">
+
+<label for="gender">성별</label>
+<select id="gender">
+  <option value="male">남성</option>
+  <option value="female">여성</option>
+</select>
+
+<label><input type="checkbox" id="consent"> 개인정보 제공에 동의</label><br>
+
+<div class="btn-group">
+  <button onclick="register()">가입하기</button>
+  <button onclick="location.href='login.html'">로그인</button>
+</div>
+
+<script>
+const api = 'https://supermax.kr/feed'; // ✅ feed로 변경
+let isPhoneVerified = false; // ✅ 인증 완료 여부 확인 변수
+
+async function sendVerification() {
+  const phone = document.getElementById('phone').value;
+  if (!phone) {
+    alert("전화번호를 입력하세요.");
+    return;
+  }
+
+  const res = await fetch(`${api}/auth/send-verification`, {  // ✅ /feed/auth로 변경
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone })
+  });
+
+  const data = await res.json();
+  if (res.ok) {
+    alert("인증번호가 전송되었습니다.");
+    document.getElementById('verification_section').style.display = "flex"; // ✅ 인증번호 입력란 표시
+  } else {
+    alert("SMS 전송 실패: " + (data.error || "서버 오류"));
+  }
+}
+
+async function verifyCode() {
+  const phone = document.getElementById('phone').value;
+  const code = document.getElementById('verification_code').value;
+
+  if (!phone || !code) {
+    alert("전화번호와 인증번호를 입력하세요.");
+    return;
+  }
+
+  const res = await fetch(`${api}/auth/verify-code`, {  // ✅ /feed/auth로 변경
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code })
+  });
+
+  const data = await res.json();
+  if (res.ok) {
+    alert("인증 완료!");
+    isPhoneVerified = true; // ✅ 인증 성공 상태 저장
+    document.getElementById('verification_section').style.display = "none"; // ✅ 인증번호 입력란 숨김
+    document.getElementById('phone').readOnly = true; // ✅ 전화번호 수정 불가 처리
+    document.getElementById('send_verification_btn').disabled = true; // ✅ 인증번호 다시 받기 버튼 비활성화
+  } else {
+    alert("인증번호가 올바르지 않습니다.");
+  }
+}
+
+async function register() {
+  if (!isPhoneVerified) {
+    alert("전화번호 인증을 완료하세요!");
+    return;
+  }
+
+  const user = {
+    username: document.getElementById('username').value.trim(),
+    password: document.getElementById('password').value.trim(),
+    name: document.getElementById('name').value.trim(),
+    birth_date: document.getElementById('birth_date').value,
+    phone: document.getElementById('phone').value.trim(),
+    school: document.getElementById('school').value.trim(),
+    grade: document.getElementById('grade').value.trim(),
+    gender: document.getElementById('gender').value,
+    consent: document.getElementById('consent').checked
+  };
+
+  // 🔥 ✅ 필수 입력 항목 체크
+  if (!user.username || !user.password || !user.name || !user.birth_date || !user.phone || !user.school || !user.grade) {
+    alert("모든 필수 정보를 입력하세요!");
+    return;
+  }
+
+  if (!user.consent) {
+    alert("개인정보 제공 동의가 필요합니다.");
+    return;
+  }
+
+  // ✅ 가입 요청
+  try {
+    const res = await fetch(`${api}/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(user)
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      alert('가입 성공! 로그인하세요.');
+      location.href = 'login.html';
+    } else {
+      // ✅ 중복 가입 메시지 포함 (아이디 또는 전화번호 중복)
+      alert('가입 실패: ' + (data.error || "알 수 없는 오류 발생"));
+    }
+  } catch (error) {
+    alert("서버 연결 오류. 다시 시도하세요.");
+    console.error("🔥 서버 요청 오류:", error);
+  }
+}
+
+</script>
+
+</body>
+</html>

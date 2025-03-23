@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>피드 상세보기</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/feed.css">
+  <link rel="stylesheet" href="css/comment.css">
+  <link rel="stylesheet" href="css/swiper.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+
+  <style>
+    .emoji-trigger-wrapper input[type="text"] {
+      width: 100% !important;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .top-nav {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .back-btn {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    margin-right: 10px;
+    padding: 6px 8px;
+    border-radius: 6px;
+  }
+
+  .nav-title {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  </style>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.2/dist/emoji-button.min.js"></script>
+
+<!-- ✅ 피드 상세 영역 -->
+<section style="padding-bottom: 80px;">
+  <div class="top-nav">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <span class="nav-title">이전</span>
+  </div>
+  
+  <div id="feed-detail"></div>
+</section>
+
+<!-- ✅ 하단 고정 네비게이션 -->
+<div class="bottom-nav">
+  <button onclick="location.href='index.html'">🏠</button>
+  <button onclick="alert('🔍 검색 준비중')">🔍</button>
+  <button onclick="location.href='upload.html'" class="plus-btn">➕</button>
+  <button onclick="alert('🎬 릴스 준비중')">🎬</button>
+  <button id="profile-nav-btn" onclick="location.href='profile-feed.html'"><img id="nav-profile-img" src="https://placehold.co/32x32" alt="내 프로필" style="width: 32px; height: 32px; border-radius: 50%;"></button>
+</div>
+
+<!-- ✅ Swiper + 전역 댓글 기능 포함 js 불러오기 -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+
+</script>
+<script src="js/main.js"></script>
+<script>
+  async function loadMyProfileImageForNav() {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("user_id");
+
+    if (!token || !userId) return;
+
+    try {
+      const res = await fetch("https://supermax.kr/feed/user-info", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ user_id: userId })
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      document.getElementById("nav-profile-img").src = data.profile_image || "https://placehold.co/32x32";
+    } catch (e) {
+      console.warn("하단 내 프로필 이미지 불러오기 실패", e);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadMyProfileImageForNav();
+  });
+</script>
+
+<script>
+  function getQueryParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  async function loadFeedDetail() {
+  const feedId = getQueryParam('feedId');
+  if (!feedId) return alert('피드 ID가 없습니다.');
+
+  // 🔹 피드 정보 불러오기
+  const res = await fetch(`https://supermax.kr/feed/feeds/${feedId}`);
+  const feed = await res.json();
+  if (feed.error) return alert('피드 정보를 불러올 수 없습니다.');
+
+  // 🔹 해당 피드 작성자 정보 불러오기
+  const userRes = await fetch("https://supermax.kr/feed/user-info", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + localStorage.getItem("token"),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ user_id: feed.user_id })
+  });
+
+  const userData = await userRes.json();
+
+  const container = document.getElementById('feed-detail');
+  const userName = userData.name || '사용자';
+  const profileImage = userData.profile_image || 'https://placehold.co/40x40';
+
+  let mediaHTML = '';
+  try {
+    const mediaArray = JSON.parse(feed.media_url || '[]');
+    if (Array.isArray(mediaArray) && mediaArray.length > 0) {
+      const slides = mediaArray.map(url => `
+        <div class="swiper-slide">
+          ${url.includes('.mp4')
+            ? `<video class="feed-video" controls muted preload="none" src="${url}"></video>`
+            : `<img src="${url}" alt="피드 이미지">`}
+        </div>`).join('');
+
+      const swiperId = `swiper-${feed.id}`;
+      mediaHTML = `
+        <div class="swiper" id="${swiperId}">
+          <div class="swiper-wrapper">${slides}</div>
+          <div class="swiper-pagination"></div>
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-button-next"></div>
+        </div>`;
+
+      setTimeout(() => {
+        const wrapper = document.querySelector(`#${swiperId} .swiper-wrapper`);
+        if (wrapper && wrapper.children.length > 1) {
+          new Swiper(`#${swiperId}`, {
+            loop: true,
+            pagination: { el: `#${swiperId} .swiper-pagination` },
+            navigation: {
+              nextEl: `#${swiperId} .swiper-button-next`,
+              prevEl: `#${swiperId} .swiper-button-prev`
+            }
+          });
+        }
+      }, 0);
+    }
+  } catch (e) {
+    console.error('❌ 미디어 파싱 오류:', e);
+  }
+
+  container.innerHTML = `
+    <div class="feed">
+      <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
+        <img src="${profileImage}" alt="프로필">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <strong>${userName}</strong>
+          <span class="timestamp" style="font-size: 0.85rem; color: #888;">${getRelativeTime(feed.created_at)}</span>
+        </div>
+      </div>
+      <p>${feed.content || ''}</p>
+      ${mediaHTML}
+      <div class="actions">
+        <button class="like-btn" id="like-btn-${feed.id}" onclick="likeFeed(${feed.id})">❤️ ${feed.like_count || 0}</button>
+        <button id="comment-btn-${feed.id}" onclick="commentFeed(${feed.id}, true)" class="icon-btn">
+          <span>💬</span> <span id="comment-count-${feed.id}">${feed.comment_count || 0}</span>
+        </button>
+      </div>
+      <div id="comments-${feed.id}" class="comments"></div>
+    </div>
+  `;
+
+  // ✅ 댓글까지 로딩
+  await window.commentFeed(feed.id, true);
+}
+
+
+  window.setupEmojiPicker = function (inputId, triggerEl) {
+    if (!triggerEl._emojiPickerInstance) {
+      const picker = new EmojiButton({ position: 'top-start', zIndex: 9999 });
+
+      picker.on('emoji', emoji => {
+        const input = document.getElementById(inputId);
+        if (input) {
+          input.value += emoji;
+          input.focus();
+        }
+        picker.hidePicker();
+      });
+
+      triggerEl._emojiPickerInstance = picker;
+    }
+    triggerEl._emojiPickerInstance.togglePicker(triggerEl);
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const anchor = document.getElementById('scroll-anchor');
+    if (anchor) observer.observe(anchor);
+  } catch (e) {
+    // ❌ 콘솔에 아무것도 안 찍히게 무시!
+  }
+
+  loadFeedDetail();
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>피드 작성 - MaxFeed</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <style>
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      z-index: 9999;
+      opacity: 0;
+    }
+
+    .emoji-picker {
+      margin-top: 5px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+
+    .emoji-picker span {
+      font-size: 20px;
+      cursor: pointer;
+      margin: 3px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>새 피드 작성</h2>
+
+<!-- ✅ textarea ID 수정해서 JS와 맞춤 -->
+<textarea id="feed-content-input" placeholder="내용을 입력하세요" style="width:100%; height:100px;"></textarea><br>
+<button onclick="toggleEmojiPicker('feed-content-input')">😊</button>
+<div id="emoji-picker-feed-content-input" class="emoji-picker"></div>
+
+<input type="file" id="file" multiple>
+<button id="upload-btn" onclick="addFeed()">업로드</button>
+<button onclick="location.href='index.html'">이전</button>
+
+<script>
+const api = 'https://supermax.kr/feed';
+
+// ✅ 공용 이모지 배열
+const emojis = ['😀','😂','😍','😎','😭','👍','🙏','🔥','🎉','💪'];
+
+// ✅ 이모지 삽입 함수
+function insertEmoji(inputId, emoji) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.value += emoji;
+    input.focus();
+  }
+}
+
+// ✅ 이모지 피커 토글 함수
+function toggleEmojiPicker(inputId) {
+  const pickerId = `emoji-picker-${inputId}`;
+  const picker = document.getElementById(pickerId);
+
+  // 열려 있으면 닫기
+  if (picker.innerHTML.trim() !== "") {
+    picker.innerHTML = '';
+    return;
+  }
+
+  // 이모지 목록 표시
+  picker.innerHTML = emojis.map(e => `
+    <span onclick="insertEmoji('${inputId}', '${e}')">${e}</span>
+  `).join('');
+}
+
+// ✅ 토스트 메시지 표시
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerText = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.style.opacity = 1, 10);
+  setTimeout(() => {
+    toast.style.opacity = 0;
+    setTimeout(() => toast.remove(), 500);
+  }, 2000);
+}
+
+// ✅ 피드 업로드
+async function addFeed() {
+  const fileInput = document.getElementById('file');
+  const content = document.getElementById('feed-content-input').value;
+  const uploadBtn = document.getElementById('upload-btn');
+
+  uploadBtn.disabled = true;
+  uploadBtn.innerText = '⏳ 업로드 중...';
+
+  if (!fileInput.files.length) {
+    alert('파일을 선택하세요!');
+    uploadBtn.disabled = false;
+    uploadBtn.innerText = '업로드';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('content', content);
+  for (let i = 0; i < fileInput.files.length; i++) {
+    formData.append('files', fileInput.files[i]);
+  }
+
+  showToast("⏳ 피드 업로드 중...");
+  localStorage.setItem("pendingUpload", "true");
+
+  try {
+    const res = await fetch(`${api}/add-feed`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+      body: formData
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      console.log("✅ 업로드 성공:", data);
+      location.href = 'index.html';
+    } else {
+      const err = await res.json();
+      alert("❌ 업로드 실패: " + (err.error || "오류"));
+      uploadBtn.disabled = false;
+      uploadBtn.innerText = '업로드';
+    }
+  } catch (err) {
+    console.error("🔥 업로드 오류:", err);
+    alert("❌ 업로드 실패: " + err.message);
+    uploadBtn.disabled = false;
+    uploadBtn.innerText = '업로드';
+  }
+}
+</script>
+
+</body>
+</html>

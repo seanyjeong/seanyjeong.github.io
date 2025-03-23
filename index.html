@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ilsanmaxtagram</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=SUIT:wght@400;600;700&display=swap" rel="stylesheet">
+
+
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MAX LOUNGE">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/seanyjeong/maxfeed/main/icon-180.png">
+
+<link rel="stylesheet" href="css/reset.css">
+
+<link rel="stylesheet" href="css/feed.css">
+<link rel="stylesheet" href="css/comment.css">
+<link rel="stylesheet" href="css/emoji.css">
+<link rel="stylesheet" href="css/swiper.css">
+
+
+
+</head>
+<body>
+
+    <!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+
+<!-- ✅ index.html 중간 피드 section 위에 추가 -->
+<div class="page-title">
+  <h1>일맥라운지</h1>
+  <p class="slogan">너의 성장을 담다.</p>
+</div>
+
+
+
+
+
+
+<!-- 📌 피드 목록 -->
+<section>
+  <h3 id="feeds-title">📌 피드 목록</h3>
+  <div id="feeds"></div>
+</section>
+<div id="scroll-anchor"></div> <!-- 🔥 무한스크롤 앵커 -->
+
+
+<script src="js/main.js"></script>
+
+<script>
+  async function loadMyProfileImageForNav() {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("user_id");
+
+    if (!token || !userId) return;
+
+    try {
+      const res = await fetch("https://supermax.kr/feed/user-info", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ user_id: userId })
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      document.getElementById("nav-profile-img").src = data.profile_image || "https://placehold.co/32x32";
+    } catch (e) {
+      console.warn("하단 내 프로필 이미지 불러오기 실패", e);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadMyProfileImageForNav();
+  });
+</script>
+
+<!-- 📌 index.html 마지막에 추가 (</body> 바로 위) -->
+<div class="bottom-nav">
+  <button onclick="resetFeedState('/feeds'); loadFeeds('/feeds')">🏠</button>
+  <button onclick="alert('🔍 검색 준비중')">🔍</button>
+  <button onclick="location.href='upload.html'" class="plus-btn">➕</button>
+  <button onclick="alert('🎬 릴스 준비중')">🎬</button>
+  <button onclick="location.href='profile-feed.html'">
+    <img id="nav-profile-img" src="https://placehold.co/32x32" alt="내 프로필" style="width: 32px; height: 32px; border-radius: 50%;" />
+  </button>
+  
+</div>
+
+
+
+</body>
+</html>

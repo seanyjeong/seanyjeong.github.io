@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>내 정보 수정 - MaxFeed</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+</head>
+<body>
+
+<h2>내 정보 수정</h2>
+
+<!-- 프로필 이미지 -->
+<img id="profile_img" src="https://placehold.co/100x100" alt="프로필 이미지" style="border-radius: 50%;">
+<label>프로필 이미지</label>
+<input type="file" id="profile_image">
+
+<!-- 전화번호 수정 -->
+<label>전화번호</label>
+<input type="text" id="phone" placeholder="전화번호">
+
+<!-- 생년월일 수정 -->
+<label>생년월일</label>
+<input type="date" id="birth_date">
+
+<!-- 비밀번호 변경 -->
+<label>현재 비밀번호</label>
+<input type="password" id="current_password" placeholder="현재 비밀번호 (변경 시 입력)">
+
+<label>새 비밀번호</label>
+<input type="password" id="new_password" placeholder="새 비밀번호 (변경할 경우만 입력)">
+
+<label>새 비밀번호 확인</label>
+<input type="password" id="confirm_password" placeholder="새 비밀번호 확인">
+
+<button onclick="updateProfile()">수정</button>
+<button onclick="location.href='index.html'">이전</button>
+
+<script>
+    const api = 'https://supermax.kr/feed';
+    
+    // ✅ 현재 프로필 및 정보 가져오기
+    async function loadProfile() {
+        const res = await fetch(`${api}/user-info`, {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') }
+        });
+        
+        if (!res.ok) {
+            alert("사용자 정보를 불러올 수 없습니다!");
+            return;
+        }
+    
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('profile_img').src = data.profile_image || "https://placehold.co/100x100";
+            document.getElementById('phone').value = data.phone || ''; // ✅ 전화번호 자동 입력
+            document.getElementById('birth_date').value = data.birth_date ? data.birth_date.substring(0, 10) : ''; // ✅ 생년월일 자동 입력
+        }
+    }
+    
+    // ✅ 내 정보 수정 요청
+    async function updateProfile() {
+        const formData = new FormData();
+        const fileInput = document.getElementById('profile_image');
+        const phone = document.getElementById('phone').value;
+        const birth_date = document.getElementById('birth_date').value;
+        const current_password = document.getElementById('current_password').value;
+        const new_password = document.getElementById('new_password').value;
+        const confirm_password = document.getElementById('confirm_password').value;
+    
+        if (fileInput.files.length) formData.append('profile_image', fileInput.files[0]);
+        if (phone) formData.append('phone', phone);
+        if (birth_date) formData.append('birth_date', birth_date);
+        if (current_password) formData.append('current_password', current_password);
+        if (new_password) formData.append('new_password', new_password);
+        if (confirm_password) formData.append('confirm_password', confirm_password);
+    
+        if (new_password && new_password !== confirm_password) {
+            alert("새 비밀번호가 일치하지 않습니다!");
+            return;
+        }
+    
+        const res = await fetch(`${api}/update-profile`, {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+            body: formData
+        });
+    
+        const data = await res.json();
+        if (res.ok) {
+            alert('수정 완료!');
+            if (data.profile_url) {
+                document.getElementById('profile_img').src = data.profile_url;
+            }
+            location.href = 'index.html';
+        } else {
+            console.error("🔥 서버 응답 오류:", data);
+            alert('수정 실패: ' + (data.error || '알 수 없는 오류'));
+        }
+    }
+    
+    // ✅ 페이지 로드 시 기존 정보 불러오기
+    document.addEventListener("DOMContentLoaded", loadProfile);
+    </script>
+    
+
+</body>
+</html>
