@@ -1,0 +1,208 @@
+.feed {
+    border-left: 4px solid #c5360b;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
+    margin-bottom: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .feed:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  }
+  
+  .feed-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 15px 0;
+  }
+  
+  .feed-buttons button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    font-size: 1rem;
+    background: #f2f4f8;
+    border-radius: 8px;
+    border: none;
+    color: #333;
+    font-weight: 500;
+    transition: background 0.2s ease;
+  }
+  
+  .feed-buttons button:hover {
+    background: #e4e7ec;
+  }
+  
+  .profile {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  
+  .profile img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  
+  .like-btn {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  
+  .like-btn.liked {
+    color: red;
+    font-weight: bold;
+  }
+  
+  .feed .actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  
+  .icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px;
+  }
+  
+  .icon-btn span {
+    font-size: 1rem;
+  }
+  
+  @media screen and (max-width: 480px) {
+    .feed {
+      margin-bottom: 18px;
+      border-radius: 14px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+    }
+  
+    .feed-buttons {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+  
+    .feed-buttons button {
+      padding: 6px 10px;
+      font-size: 0.9rem;
+    }
+  }
+  
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #ffffff;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 9999;
+  }
+  
+  .bottom-nav button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+  }
+  
+  .plus-btn {
+    font-size: 30px;
+    background: #f2f4f8;
+    border-radius: 50%;
+    padding: 6px 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    margin-top: -10px; /* 약간 위로 띄워서 플로팅 느낌 */
+  }
+
+  .page-title {
+    text-align: center;
+    margin: 25px 0 10px;
+  }
+  
+  .page-title h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 6px;
+  }
+  
+  .page-title .slogan {
+    font-size: 1rem;
+    color: #777;
+  }
+  .clickable-user {
+    cursor: pointer;
+  }
+  
+  .clickable-user:hover strong {
+    text-decoration: underline;
+    color: #007bff;
+  }
+  .my-profile-section {
+    text-align: center;
+    margin: 25px 0 10px;
+  }
+  
+  .my-profile-section img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+  }
+  
+  .my-profile-section h2 {
+    margin-top: 10px;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+  
+  .my-profile-section button {
+    margin-top: 8px;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #feeds {
+    padding-bottom: 80px; /* 🔥 하단바 높이만큼 여유 공간 확보 */
+  }
+  .grid-feed-wrapper {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 10px;
+  }
+  
+  .grid-feed-wrapper .thumbnail img,
+  .grid-feed-wrapper .thumbnail video {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+          

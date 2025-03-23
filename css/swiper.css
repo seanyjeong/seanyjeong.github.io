@@ -1,0 +1,23 @@
+.swiper {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.swiper-slide {
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+}
+.swiper-slide img,
+.swiper-slide video {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 8px;
+}

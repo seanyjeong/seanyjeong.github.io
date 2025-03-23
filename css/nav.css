@@ -1,0 +1,78 @@
+.nav-spacing {
+    margin-top: 15px;
+  }
+/* 🔥 네비게이션 바 스타일 */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 2px solid #ddd;
+    background: white;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  
+  nav .logo {
+    font-size: 1.8rem;
+    font-weight: bold;
+    text-align: center;
+    color: #222;
+    padding: 10px 0;
+  }
+  
+  .logo .slogan {
+    font-size: 1rem;
+    color: #777;
+    margin-top: 5px;
+    font-weight: normal;
+  }
+  
+  nav .buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    white-space: nowrap;
+  }
+  
+  nav .right-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  nav .profile-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  nav .profile-info img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+  }
+  
+  .nav-spacing {
+    margin-top: 15px;
+  }
+  
+  @media screen and (max-width: 480px) {
+    nav {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .logo {
+      position: static;
+      transform: none;
+      margin-bottom: 10px;
+    }
+    nav .buttons {
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 10px;
+    }
+  }
+  
