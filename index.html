@@ -58,6 +58,8 @@
 
     <!-- Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.260.0/dist/umd/lucide.min.js"></script>
+
 
 
 <!-- ✅ index.html 중간 피드 section 위에 추가 -->
@@ -82,7 +84,9 @@
 <script src="js/main.js"></script>
 
 <script>
-async function loadMyProfileImageForNav() {
+
+
+  async function loadMyProfileImageForNav() {
   const userId = localStorage.getItem("user_id");
   if (!userId) return;
 
@@ -96,14 +100,32 @@ async function loadMyProfileImageForNav() {
   document.addEventListener("DOMContentLoaded", () => {
     loadMyProfileImageForNav();
   });
+
+
+  lucide.createIcons();
+
+
+  
 </script>
 
 <!-- 📌 index.html 마지막에 추가 (</body> 바로 위) -->
 <div class="bottom-nav">
-  <button onclick="resetFeedState('/feeds'); loadFeeds('/feeds')">🏠</button>
-  <button onclick="alert('🔍 검색 준비중')">🔍</button>
-  <button onclick="location.href='upload.html'" class="plus-btn">➕</button>
-  <button onclick="alert('🎬 릴스 준비중')">🎬</button>
+  <button onclick="resetFeedState('/feeds'); loadFeeds('/feeds')" title="홈">
+    <!-- home.svg -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+  </button>
+  <button onclick="alert('검색 준비중')" title="검색">
+    <!-- search.svg -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  </button>
+  <button onclick="location.href='upload.html'" title="업로드">
+    <!-- plus.svg -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+  </button>
+  <button onclick="alert('릴스 준비중')" title="릴스">
+    <!-- video.svg -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clapperboard"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+  </button>
   <button onclick="location.href='profile-feed.html'">
     <img id="nav-profile-img" src="https://placehold.co/32x32" alt="내 프로필" style="width: 32px; height: 32px; border-radius: 50%;" />
   </button>
