@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>태그 피드</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/feed.css">
+</head>
+<body>
+
+  <h2 style="text-align:center; margin:20px 0;" id="tag-title">#태그 피드</h2>
+
+  <section>
+    <div id="feeds" class="grid-feed-wrapper"></div>
+  </section>
+
+  <div class="bottom-nav">
+    <button onclick="location.href='index.html'">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    </button>
+    <button onclick="alert('검색 준비중')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    </button>
+    <button onclick="location.href='upload.html'">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+    </button>
+    <button onclick="alert('릴스 준비중')">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clapperboard"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+    </button>
+    <button onclick="location.href='profile-feed.html'">
+      <img src="https://placehold.co/32x32" style="width: 32px; height: 32px; border-radius: 50%;">
+    </button>
+  </div>
+
+<script>
+const api = 'https://supermax.kr/feed';
+
+const tag = new URLSearchParams(location.search).get("tag");
+document.getElementById("tag-title").innerText = `#${tag} 피드`;
+
+async function loadTagFeeds() {
+  const res = await fetch(`${api}/feeds?tag=${encodeURIComponent(tag)}`);
+  const feeds = await res.json();
+  const container = document.getElementById("feeds");
+
+  container.innerHTML = feeds.map(feed => {
+    let media = '';
+    try {
+      const mediaArray = JSON.parse(feed.media_url);
+      if (Array.isArray(mediaArray) && mediaArray.length > 0) {
+        const url = mediaArray[0];
+        media = url.includes('.mp4')
+          ? `<video src="${url}" muted preload="metadata"></video>`
+          : `<img src="${url}" alt="썸네일">`;
+      } else {
+        media = `🏅 ${feed.event || ''}<br>${feed.record || ''}`;
+      }
+    } catch {}
+
+    return `<div class="thumbnail" onclick="location.href='feed-detail.html?feedId=${feed.id}'">${media}</div>`;
+  }).join('');
+}
+
+document.addEventListener("DOMContentLoaded", loadTagFeeds);
+</script>
+</body>
+</html>
