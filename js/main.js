@@ -1,4 +1,4 @@
-  let currentFeedEndpoint = '/feeds';
+let currentFeedEndpoint = '/feeds';
 const limit = 10;
 let loading = false; // 초기화
 let done = false;
@@ -506,11 +506,14 @@ async function commentFeed(feedId, forceOpen = false) {
   <div style="margin-bottom: 10px;">
     <div class="emoji-trigger-wrapper" style="display: flex; align-items: center; gap: 6px;">
       <input type="text" id="comment-input-${feedId}" placeholder="댓글 입력..." style="flex: 1;">
-      <label for="comment-file-${feedId}" style="cursor: pointer;">📷</label>
-      <input type="file" id="comment-file-${feedId}" accept="image/*,video/*" style="display: none;">
-      <button class="emoji-icon" onclick="setupEmojiPicker('comment-input-${feedId}', this)">😊</button>
-      <button onclick="addComment(${feedId})" class="emoji-icon">✏️</button>
-    </div>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 1.2rem; margin-top: 4px;">
+  <label for="comment-file-${feedId}" style="cursor: pointer;">📷</label>
+  <input type="file" id="comment-file-${feedId}" accept="image/*,video/*" style="display: none;">
+
+  <span onclick="setupEmojiPicker('comment-input-${feedId}', this)" style="cursor: pointer;">😊</span>
+  <span onclick="addComment(${feedId})" style="cursor: pointer;">✏️</span>
+</div>
+
     <div id="preview-${feedId}" style="margin-top: 5px;"></div>
     <div id="emoji-picker-comment-input-${feedId}" class="emoji-picker"></div>
   </div>
@@ -671,16 +674,23 @@ function toggleReplyInput(commentId, feedId) {
 
     // ✅ 입력창을 기존 댓글 아래에 바로 삽입
     replyContainer.innerHTML = `
-  <div class="reply-input" style="position: relative; display: flex; align-items: center; gap: 5px;">
-    <input type="text" id="reply-input-field-${commentId}" placeholder="대댓글입력..." style="flex: 1;">
-    <label for="reply-media-${commentId}" style="cursor: pointer;">📷</label>
-    <input type="file" id="reply-media-${commentId}" accept="image/*,video/*" style="display: none;">
-    <button onclick="setupEmojiPicker('reply-input-field-${commentId}', this)">😊</button>
-    <button onclick="addComment(${feedId}, ${commentId})">답글작성</button>
-  </div>
-  <div id="emoji-picker-reply-input-field-${commentId}" class="emoji-picker"></div>
-  <div id="reply-preview-${commentId}" style="margin-left: 20px; margin-top: 5px;"></div>
-`;
+    <div class="reply-input-wrapper" style="margin-top: 6px;">
+      <input type="text" id="reply-input-field-${commentId}" placeholder="답글 입력..." 
+        style="width: 100%; padding: 6px 8px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 6px;">
+  
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 4px; font-size: 1.2rem;">
+  <label for="reply-media-${commentId}" style="cursor: pointer;">📷</label>
+  <span onclick="setupEmojiPicker('reply-input-field-${commentId}', this)" style="cursor: pointer;">😊</span>
+  <span onclick="addComment(${feedId}, ${commentId})" style="cursor: pointer;">✏️</span>
+</div>
+
+  
+      <div id="emoji-picker-reply-input-field-${commentId}" class="emoji-picker"></div>
+      <div id="reply-preview-${commentId}" style="margin-top: 5px;"></div>
+    </div>
+  `;
+  
+  
 setupFilePreviewListener(); // ✅ 댓글창 다 만든 다음!
 
 
@@ -739,6 +749,7 @@ async function addComment(feedId, parentId = null) {
     alert("댓글 업로드 실패");
   }
 }
+
 async function secureFetchUserInfo(user_id) {
   const token = localStorage.getItem("token");
 
