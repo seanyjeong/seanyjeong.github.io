@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>피드 수정</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <style>
+    .media-preview {
+      position: relative;
+      display: inline-block;
+      margin: 8px 4px;
+    }
+    .media-preview img,
+    .media-preview video {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 6px;
+    }
+    .delete-media-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>피드 수정</h2>
+
+  <label for="event">종목</label>
+  <select id="event">
+    <option value="">-- 선택하세요 --</option>
+    <option value="제자리멀리뛰기">제자리멀리뛰기</option>
+    <option value="메디신볼던지기">메디신볼던지기</option>
+    <option value="배근력">배근력</option>
+    <option value="20m왕복달리기">20m왕복달리기</option>
+    <option value="윗몸일으키기">윗몸일으키기</option>
+  </select>
+
+  <label for="record">기록</label>
+  <input type="text" id="record" placeholder="예: 240">
+
+  <label for="content">메모</label>
+  <textarea id="content" style="width: 100%; height: 100px;"></textarea>
+
+  <h4>기존 미디어</h4>
+  <div id="existing-media"></div>
+
+  <h4>새로운 미디어 추가</h4>
+  <input type="file" id="files" multiple>
+
+  <button onclick="submitEdit()">수정 완료</button>
+  <button onclick="history.back()">취소</button>
+
+<script>
+const api = 'https://supermax.kr/feed';
+const feedId = new URLSearchParams(location.search).get("feedId");
+let existingMedia = [];
+let removedMedia = [];
+
+if (!feedId) {
+  alert("잘못된 접근입니다");
+  location.href = 'index.html';
+}
+
+async function loadFeed() {
+  console.log("🔍 feedId:", feedId);
+  const token = localStorage.getItem("token");
+
+  try {
+    const res = await fetch(`${api}/feeds/${feedId}`, {
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    });
+
+    console.log("🔍 status:", res.status);
+    const feed = await res.json();
+    console.log("📦 feed:", feed);
+
+    if (!res.ok || feed.error) {
+      alert('피드 정보를 불러올 수 없습니다.');
+      return;
+    }
+
+    document.getElementById('event').value = feed.event || '';
+    document.getElementById('record').value = feed.record || '';
+    document.getElementById('content').value = feed.content || '';
+
+    try {
+      existingMedia = JSON.parse(feed.media_url || '[]');
+    } catch {}
+
+    const container = document.getElementById('existing-media');
+    existingMedia.forEach(url => {
+      const div = document.createElement('div');
+      div.className = 'media-preview';
+      div.dataset.url = url;
+      div.innerHTML = `
+        ${url.includes('.mp4')
+          ? `<video src="${url}" controls muted></video>`
+          : `<img src="${url}" alt="미리보기">`}
+        <button class="delete-media-btn" onclick="removeMedia('${url}')">❌</button>
+      `;
+      container.appendChild(div);
+    });
+  } catch (error) {
+    console.error("🔥 fetch 오류:", error);
+    alert("서버 통신 오류 발생");
+  }
+}
+
+function removeMedia(url) {
+  removedMedia.push(url);
+  document.querySelector(`.media-preview[data-url="${url}"]`).remove();
+}
+
+async function submitEdit() {
+  const content = document.getElementById('content').value;
+  const event = document.getElementById('event').value;
+  const record = document.getElementById('record').value;
+  const fileInput = document.getElementById('files');
+  const token = localStorage.getItem('token');
+
+  const keptMedia = existingMedia.filter(url => !removedMedia.includes(url));
+
+  const formData = new FormData();
+  formData.append('feed_id', feedId);
+  formData.append('content', content);
+  formData.append('event', event);
+  formData.append('record', record);
+  formData.append('existing_media', JSON.stringify(keptMedia));
+
+  for (let file of fileInput.files) {
+    formData.append('files', file);
+  }
+
+  try {
+    const res = await fetch(`${api}/update-feed`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + token
+      },
+      body: formData
+    });
+
+    const result = await res.json();
+    console.log("✅ 수정 결과:", result);
+
+    if (res.ok) {
+      alert('피드가 수정되었습니다!');
+      location.href = 'feed-detail.html?feedId=' + feedId;
+    } else {
+      alert('수정 실패: ' + (result.error || '오류'));
+    }
+  } catch (e) {
+    console.error("❌ 수정 요청 실패:", e);
+    alert("수정 요청 중 오류 발생");
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadFeed);
+</script>
+</body>
+</html>
