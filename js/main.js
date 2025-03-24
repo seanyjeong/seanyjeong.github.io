@@ -521,8 +521,7 @@ async function commentFeed(feedId, forceOpen = false) {
   <span onclick="setupEmojiPicker('comment-input-${feedId}', this)" style="cursor: pointer;">😊</span>
   <span onclick="addComment(${feedId})" style="cursor: pointer;">✏️</span>
 </div>
-
-    <div id="preview-${feedId}" style="margin-top: 5px;"></div>
+<div id="preview-${feedId}" style="margin-top: 5px;"></div>
     <div id="emoji-picker-comment-input-${feedId}" class="emoji-picker"></div>
   </div>
 `;
@@ -565,7 +564,10 @@ async function commentFeed(feedId, forceOpen = false) {
               ${!isDeleted ? `
                 <div class="comment-actions">
                   <button class="reply-btn" onclick="toggleReplyInput(${comment.id}, ${comment.feed_id})">💬 답글</button>
-                  <button class="like-comment-btn ${liked ? 'liked' : ''}" onclick="likeComment(${comment.id})">❤️ ${likeCount}</button>
+<button id="comment-like-${comment.id}" class="like-comment-btn ${liked ? 'liked' : ''}" onclick="likeComment(${comment.id})">
+  ❤️ <span>${likeCount}</span>
+</button>
+
                 </div>
               ` : ''}
             </div>
@@ -691,9 +693,7 @@ function toggleReplyInput(commentId, feedId) {
   <span onclick="setupEmojiPicker('reply-input-field-${commentId}', this)" style="cursor: pointer;">😊</span>
   <span onclick="addComment(${feedId}, ${commentId})" style="cursor: pointer;">✏️</span>
 </div>
-
-  
-      <div id="emoji-picker-reply-input-field-${commentId}" class="emoji-picker"></div>
+<div id="emoji-picker-reply-input-field-${commentId}" class="emoji-picker"></div>
       <div id="reply-preview-${commentId}" style="margin-top: 5px;"></div>
     </div>
   `;
@@ -1113,10 +1113,12 @@ window.renderComments = async function(feedId) {
 
 
 window.likeComment = async function(commentId) {
+  console.log("🚀 likeComment 실행됨!", commentId);
+
   const token = localStorage.getItem('token');
   if (!token) return alert('로그인이 필요합니다.');
 
-  const res = await fetch(`${api}/comments/like`, {
+  const res = await fetch(`${api}/like-comment`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1125,16 +1127,33 @@ window.likeComment = async function(commentId) {
     body: JSON.stringify({ comment_id: commentId })
   });
 
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error("❌ 서버 오류:", errText);
+    alert("댓글 좋아요 실패");
+    return;
+  }
+
   const result = await res.json();
-  if (res.ok && result.success) {
-    const btn = document.querySelector(`#comment-like-${commentId}`);
-    if (btn) {
-      btn.classList.toggle('liked');
-      const countSpan = btn.querySelector('span');
-      if (countSpan) countSpan.textContent = result.like_count;
+  console.log("💬 like-comment 응답:", result);
+
+  // ✅ 버튼 & 숫자 UI 업데이트
+  const btn = document.querySelector(`#comment-like-${commentId}`);
+  if (btn) {
+    btn.classList.toggle('liked', result.liked);
+
+    const span = btn.querySelector('span');
+    if (span) {
+      span.textContent = result.like_count;
+    } else {
+      btn.innerHTML = `❤️ <span>${result.like_count}</span>`;
     }
+  } else {
+    console.warn("❌ 버튼 못 찾음:", `#comment-like-${commentId}`);
   }
 };
+
+
 
 window.replyComment = function(parentId, feedId) {
   const parentEl = document.getElementById(`reply-box-${parentId}`);
