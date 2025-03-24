@@ -739,6 +739,33 @@ async function addComment(feedId, parentId = null) {
     alert("댓글 업로드 실패");
   }
 }
+async function secureFetchUserInfo(user_id) {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch("https://supermax.kr/feed/user-info", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ user_id })
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    if (text.includes("jwt expired") || text.includes("Invalid token")) {
+      alert("로그인이 만료되었습니다. 다시 로그인해주세요.");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user_id");
+      location.href = "login.html";
+      return null;
+    }
+    throw new Error("서버 응답 오류: " + text);
+  }
+
+  return await res.json();
+}
+
 
 
 // document.addEventListener("change", (e) => {
