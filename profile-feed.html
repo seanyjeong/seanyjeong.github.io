@@ -211,18 +211,29 @@ async function loadMyProfileImageForNav() {
 
         const container = document.getElementById("feeds");
         container.innerHTML = feeds.map(feed => {
-          let media = '';
-          try {
-            const mediaArray = JSON.parse(feed.media_url);
-            if (Array.isArray(mediaArray) && mediaArray.length > 0) {
-              const url = mediaArray[0];
-              media = url.includes('.mp4')
-                ? `<video src="${url}" muted preload="metadata"></video>`
-                : `<img src="${url}" alt="피드 썸네일">`;
-            }
-          } catch {}
-          return `<div class="thumbnail" onclick="location.href='feed-detail.html?feedId=${feed.id}'">${media}</div>`;
-        }).join('');
+  let media = '';
+  try {
+    const mediaArray = JSON.parse(feed.media_url);
+    if (Array.isArray(mediaArray) && mediaArray.length > 0) {
+      const url = mediaArray[0];
+      media = url.includes('.mp4')
+        ? `<video src="${url}" muted preload="metadata"></video>`
+        : `<img src="${url}" alt="피드 썸네일">`;
+    } else {
+      // ✅ 기록만 있는 경우 → 기록 썸네일 만들어주기
+      media = `
+
+            🏅 ${feed.event || '종목 없음'}<br/>
+            ${feed.record || '기록 없음'}
+          </div>
+        </div>
+      `;
+    }
+  } catch {}
+
+  return `<div class="thumbnail" onclick="location.href='feed-detail.html?feedId=${feed.id}'">${media}</div>`;
+}).join('');
+
       } catch (e) {
         console.error("피드 불러오기 실패", e);
       }
