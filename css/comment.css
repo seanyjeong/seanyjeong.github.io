@@ -198,5 +198,22 @@
       margin: 0 auto;  /* 가운데 정렬 */
     }
   }
+@media screen and (max-width: 480px) {
+  .emoji-trigger-wrapper {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .emoji-trigger-wrapper input[type="text"] {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .emoji-trigger-wrapper label,
+  .emoji-trigger-wrapper button {
+    flex: 0 0 auto;
+  }
+}
   
   
