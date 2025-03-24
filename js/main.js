@@ -981,26 +981,34 @@ async function loadFeeds(endpoint, pageArg = null) {
         const timeAgo = getRelativeTime(feed.created_at);
   
         feedsDiv.innerHTML += `<div class="feed">
-    <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
-
-            <img src="${profileImage}">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <strong>${userName}</strong>
-              <span class="timestamp" style="font-size: 0.85rem; color: #888;">${timeAgo}</span>
-            </div>
+        <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
+          <img src="${profileImage}">
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <strong>${userName}</strong>
+            <span class="timestamp" style="font-size: 0.85rem; color: #888;">${timeAgo}</span>
           </div>
-  
-          <p>${feed.content || ''}</p>
-          ${mediaHTML}
-          <div class="actions">
-            <button class="like-btn ${likedClass}" id="like-btn-${feed.id}" onclick="likeFeed(${feed.id})">❤️ ${likeCount}</button>
-            <button id="comment-btn-${feed.id}" onclick="commentFeed(${feed.id})" class="icon-btn">
-              <span>💬</span> <span id="comment-count-${feed.id}">${commentCount}</span>
-            </button>
-            ${isMyFeed ? `<button class="icon-btn" onclick="deleteFeed(${feed.id})">🗑️</button>` : ''}
-          </div>
-          <div id="comments-${feed.id}" class="comments"></div>
-        </div>`;
+        </div>
+      
+        <!-- ✅ 여기에 종목 & 기록 표시 -->
+        <div style="margin: 6px 0; font-size: 0.92rem; color: #222;">
+          <strong>🏅 ${feed.event || '종목 없음'}</strong>
+          ${feed.record ? ` - ${feed.record}` : ''}
+        </div>
+      
+        <p>${feed.content || ''}</p>
+        ${mediaHTML}
+        
+        <div class="actions">
+          <button class="like-btn ${likedClass}" id="like-btn-${feed.id}" onclick="likeFeed(${feed.id})">❤️ ${likeCount}</button>
+          <button id="comment-btn-${feed.id}" onclick="commentFeed(${feed.id})" class="icon-btn">
+            <span>💬</span> <span id="comment-count-${feed.id}">${commentCount}</span>
+          </button>
+          ${isMyFeed ? `<button class="icon-btn" onclick="deleteFeed(${feed.id})">🗑️</button>` : ''}
+        </div>
+      
+        <div id="comments-${feed.id}" class="comments"></div>
+      </div>`;
+      
       });
   
       await setupVideoObservers();
