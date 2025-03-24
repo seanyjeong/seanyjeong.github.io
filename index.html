@@ -84,30 +84,16 @@
 <script src="js/main.js"></script>
 
 <script>
-  async function loadMyProfileImageForNav() {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("user_id");
+async function loadMyProfileImageForNav() {
+  const userId = localStorage.getItem("user_id");
+  if (!userId) return;
 
-    if (!token || !userId) return;
+  const userData = await secureFetchUserInfo(userId);
+  if (!userData) return;
 
-    try {
-      const res = await fetch("https://supermax.kr/feed/user-info", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ user_id: userId })
-      });
+  document.getElementById("nav-profile-img").src = userData.profile_image || "https://placehold.co/32x32";
+}
 
-      if (!res.ok) return;
-
-      const data = await res.json();
-      document.getElementById("nav-profile-img").src = data.profile_image || "https://placehold.co/32x32";
-    } catch (e) {
-      console.warn("하단 내 프로필 이미지 불러오기 실패", e);
-    }
-  }
 
   document.addEventListener("DOMContentLoaded", () => {
     loadMyProfileImageForNav();
