@@ -45,10 +45,27 @@
       <img id="profile-image" src="https://placehold.co/100x100" alt="프로필 이미지" style="width: 100px; height: 100px; border-radius: 50%;">
       <h2 id="profile-name">사용자이름</h2>
       <div style="margin-top: 10px;">
-        <button id="edit-profile-btn" style="display: none;">프로필 수정</button>
+        <button id="edit-profile-btn" onclick="location.href='profile.html'" style="display: none;">프로필 수정</button>
+
         <button id="logout-btn" onclick="logout()" style="display: none; margin-left: 10px;">로그아웃</button>
       </div>
     </div>
+    <!-- 소개글 표시 -->
+<p id="profile-intro" style="margin-top: 10px; font-size: 0.9rem; color: #555;"></p>
+
+<!-- 편집 버튼 (내 계정일 경우에만 보여줌) -->
+<span id="edit-intro-btn" 
+      style="display: none; font-size: 0.85rem; color: #888; text-decoration: underline dotted; cursor: pointer;">
+  ✏️ 소개글 편집
+</span>
+
+
+<!-- textarea + 저장 버튼 (초기에는 숨김) -->
+<div id="intro-edit-area" style="display: none; margin-top: 8px;">
+  <textarea id="intro-textarea" rows="2" style="width: 90%; max-width: 400px;"></textarea><br>
+  <button onclick="saveIntro()">저장</button>
+</div>
+
 
     <h3 style="text-align: center;">📸 피드</h3>
     <div id="feeds" class="grid-feed-wrapper"></div>
@@ -91,8 +108,18 @@
     }
 
     const data = await res.json();
-
     document.getElementById("profile-name").innerText = data.name || "사용자";
+document.getElementById("profile-intro").innerText = data.intro || '';
+if (userId === myUserId) {
+  document.getElementById("edit-intro-btn").style.display = "inline";
+  document.getElementById("edit-intro-btn").onclick = () => {
+    // 편집 모드 진입
+    document.getElementById("intro-edit-area").style.display = "block";
+    document.getElementById("intro-textarea").value = data.intro || '';
+  };
+}
+
+
     document.getElementById("profile-image").src = data.profile_image || "https://placehold.co/100x100";
     // document.getElementById("nav-profile-img").src = data.profile_image || "https://placehold.co/32x32";
 
@@ -105,6 +132,28 @@
     console.error("❌ 유저 정보 불러오기 실패", e);
   }
 }
+async function saveIntro() {
+  const intro = document.getElementById("intro-textarea").value;
+  const token = localStorage.getItem("token");
+
+  const res = await fetch("https://supermax.kr/feed/update-profile", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + token,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ intro })
+  });
+
+  if (res.ok) {
+    document.getElementById("profile-intro").innerText = intro;
+    document.getElementById("intro-edit-area").style.display = "none";
+    alert("소개글이 저장되었습니다!");
+  } else {
+    alert("소개글 저장 실패");
+  }
+}
+
 
 
 async function loadMyProfileImageForNav() {
