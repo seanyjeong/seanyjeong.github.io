@@ -53,8 +53,6 @@
   align-items: center;
   padding: 6px 0;
   border-top: 1px solid #ccc;
-  max-width: 480px;  /* ✅ 너무 넓어지지 않게 고정 */
-  margin: 0 auto;
   z-index: 999;
 }
 
@@ -85,13 +83,27 @@
   <div id="feed-detail"></div>
 </section>
 
-<!-- ✅ 하단 고정 네비게이션 -->
 <div class="bottom-nav">
-  <button onclick="location.href='index.html'">🏠</button>
-  <button onclick="alert('🔍 검색 준비중')">🔍</button>
-  <button onclick="location.href='upload.html'" class="plus-btn">➕</button>
-  <button onclick="alert('🎬 릴스 준비중')">🎬</button>
-  <button id="profile-nav-btn" onclick="location.href='profile-feed.html'"><img id="nav-profile-img" src="https://placehold.co/32x32" alt="내 프로필" style="width: 32px; height: 32px; border-radius: 50%;"></button>
+  <button onclick="location.href='index.html'">
+    <!-- home.svg -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+  </button>
+  <button onclick="alert('검색 준비중')" title="검색">
+    <!-- search.svg -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  </button>
+  <button onclick="location.href='upload.html'" title="업로드">
+    <!-- plus.svg -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+  </button>
+  <button onclick="alert('릴스 준비중')" title="릴스">
+    <!-- video.svg -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clapperboard"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+  </button>
+  <button onclick="location.href='profile-feed.html'">
+    <img id="nav-profile-img" src="https://placehold.co/32x32" alt="내 프로필" style="width: 32px; height: 32px; border-radius: 50%;" />
+  </button>
+  
 </div>
 
 <!-- ✅ Swiper + 전역 댓글 기능 포함 js 불러오기 -->
@@ -201,25 +213,37 @@
   }
 
   container.innerHTML = `
-    <div class="feed">
-      <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
-        <img src="${profileImage}" alt="프로필">
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <strong>${userName}</strong>
-          <span class="timestamp" style="font-size: 0.85rem; color: #888;">${getRelativeTime(feed.created_at)}</span>
-        </div>
+  <div class="feed">
+    <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
+      <img src="${profileImage}" alt="프로필">
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <strong>${userName}</strong>
+        <span class="timestamp" style="font-size: 0.85rem; color: #888;">${getRelativeTime(feed.created_at)}</span>
       </div>
-      <p>${feed.content || ''}</p>
-      ${mediaHTML}
-      <div class="actions">
-        <button class="like-btn" id="like-btn-${feed.id}" onclick="likeFeed(${feed.id})">❤️ ${feed.like_count || 0}</button>
-        <button id="comment-btn-${feed.id}" onclick="commentFeed(${feed.id}, true)" class="icon-btn">
-          <span>💬</span> <span id="comment-count-${feed.id}">${feed.comment_count || 0}</span>
-        </button>
-      </div>
-      <div id="comments-${feed.id}" class="comments"></div>
     </div>
-  `;
+
+    <!-- ✅ 종목 + 기록 출력 -->
+    <div style="margin: 6px 0; font-size: 0.92rem; color: #222;">
+      <strong>🏅 ${feed.event || '종목 없음'}</strong>
+      ${feed.record ? ` - ${feed.record}` : ''}
+    </div>
+
+    <!-- ✅ 메모/내용 -->
+    <p>${feed.content || ''}</p>
+    
+    ${mediaHTML}
+
+    <div class="actions">
+      <button class="like-btn" id="like-btn-${feed.id}" onclick="likeFeed(${feed.id})">❤️ ${feed.like_count || 0}</button>
+      <button id="comment-btn-${feed.id}" onclick="commentFeed(${feed.id}, true)" class="icon-btn">
+        <span>💬</span> <span id="comment-count-${feed.id}">${feed.comment_count || 0}</span>
+      </button>
+    </div>
+
+    <div id="comments-${feed.id}" class="comments"></div>
+  </div>
+`;
+
 
   // ✅ 댓글까지 로딩
   await window.commentFeed(feed.id, true);
