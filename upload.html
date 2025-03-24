@@ -36,16 +36,44 @@
 </head>
 <body>
 
-<h2>새 피드 작성</h2>
+  <h2>새 피드 작성</h2>
 
-<!-- ✅ textarea ID 수정해서 JS와 맞춤 -->
+  <!-- ✅ 종목 선택 -->
+  <label for="event">실기종목</label>
+  <select id="event" required>
+    <option value="">-- 선택하세요 --</option>
+    <option value="제자리멀리뛰기">제자리멀리뛰기 (cm)</option>
+    <option value="메디신볼던지기">메디신볼 던지기 (m)</option>
+    <option value="배근력">배근력 (kg)</option>
+    <option value="20m왕복달리기">20m 왕복달리기 (초)</option>
+    <option value="윗몸일으키기">윗몸일으키기 (횟수)</option>
+  </select>
+  
+  <!-- ✅ 기록 입력 -->
+  <label for="record">기록</label>
+  <input type="text" id="record" placeholder="예: 222" required>
+  
+  <!-- ✅ 메모/내용 -->
+  <textarea id="feed-content-input" placeholder="메모나 코멘트 (선택사항)" style="width:100%; height:100px;"></textarea>
+  <button onclick="toggleEmojiPicker('feed-content-input')">😊</button>
+  <div id="emoji-picker-feed-content-input" class="emoji-picker"></div>
+  
+  <!-- ✅ 미디어 선택 (선택사항) -->
+  <input type="file" id="file" multiple>
+  
+  <!-- ✅ 업로드 버튼 -->
+  <button id="upload-btn" onclick="addFeed()">업로드</button>
+  <button onclick="location.href='index.html'">이전</button>
+  
+
+<!-- ✅ textarea ID 수정해서 JS와 맞춤
 <textarea id="feed-content-input" placeholder="내용을 입력하세요" style="width:100%; height:100px;"></textarea><br>
 <button onclick="toggleEmojiPicker('feed-content-input')">😊</button>
 <div id="emoji-picker-feed-content-input" class="emoji-picker"></div>
 
 <input type="file" id="file" multiple>
 <button id="upload-btn" onclick="addFeed()">업로드</button>
-<button onclick="location.href='index.html'">이전</button>
+<button onclick="location.href='index.html'">이전</button> -->
 
 <script>
 const api = 'https://supermax.kr/feed';
@@ -101,22 +129,29 @@ async function addFeed() {
   uploadBtn.disabled = true;
   uploadBtn.innerText = '⏳ 업로드 중...';
 
-  if (!fileInput.files.length) {
-    alert('파일을 선택하세요!');
+  // ✅ 여기에 ↓↓↓ 바로 들어간다!!
+  const event = document.getElementById('event').value;
+  const record = document.getElementById('record').value;
+
+  if (!event || !record) {
+    alert("종목과 기록을 입력해주세요!");
     uploadBtn.disabled = false;
     uploadBtn.innerText = '업로드';
     return;
   }
 
   const formData = new FormData();
+  formData.append('event', event);
+  formData.append('record', record);
   formData.append('content', content);
-  for (let i = 0; i < fileInput.files.length; i++) {
-    formData.append('files', fileInput.files[i]);
+
+  if (fileInput.files.length) {
+    for (let i = 0; i < fileInput.files.length; i++) {
+      formData.append('files', fileInput.files[i]);
+    }
   }
 
-  showToast("⏳ 피드 업로드 중...");
-  localStorage.setItem("pendingUpload", "true");
-
+  // ✅ 이후 fetch 시작
   try {
     const res = await fetch(`${api}/add-feed`, {
       method: 'POST',
