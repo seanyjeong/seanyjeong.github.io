@@ -322,31 +322,39 @@ const diff = ((now - date) / 1000) + serverTimeOffset;
 
 // ✅ 피드 삭제 기능
 async function deleteFeed(feedId) {
-    if (!confirm("이 피드를 삭제하시겠습니까?")) return;
+  if (!confirm("이 피드를 삭제하시겠습니까?")) return;
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-        alert("로그인이 필요합니다.");
-        return;
-    }
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert("로그인이 필요합니다.");
+    return;
+  }
 
+  try {
     const res = await fetch(`${api}/delete-feed`, {
-        method: 'POST',
-        headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ feed_id: feedId })
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ feed_id: feedId })
     });
 
     if (res.ok) {
-        showToast("피드가 삭제되었습니다!"); // ✅ 성공한 경우에만 토스트
-        loadFeeds('/my-feeds');  // ✅ 내 피드 다시 불러오기
+      showToast("피드가 삭제되었습니다!");
+      setTimeout(() => {
+        location.href = 'index.html';
+      }, 500); // UX상 토스트 살짝 보여주고 이동
     } else {
-        const err = await res.json();
-        alert("❌ 삭제 실패: " + err.error);
+      const err = await res.json();
+      alert("❌ 삭제 실패: " + (err.error || '알 수 없는 오류'));
     }
+  } catch (e) {
+    console.error("🔥 삭제 오류:", e);
+    alert("삭제 중 오류 발생");
+  }
 }
+
 
 // ✅ loadUserFeeds 정리
 async function loadUserFeeds(userId, userName) {
@@ -862,6 +870,16 @@ function resetFeedState(endpoint) {
 
 
 
+function linkifyHashtags(text) {
+  return text.replace(/#(\S+)/g, (match, tag) => {
+    return `<span class="hashtag" onclick="location.href='tag-feed.html?tag=${encodeURIComponent(tag)}'">${match}</span>`;
+  });
+}
+function extractHashtags(text) {
+  const matches = text.match(/#(\S+)/g) || [];
+  return matches.map(tag => tag.replace('#', '')).filter((v, i, a) => a.indexOf(v) === i);
+}
+
 
 
 
@@ -979,6 +997,12 @@ async function loadFeeds(endpoint, pageArg = null) {
         const commentCount = feed.comment_count || 0;
         const isMyFeed = localStorage.getItem('user_id') == feed.user_id;
         const timeAgo = getRelativeTime(feed.created_at);
+        const contentTags = extractHashtags(feed.content || '');
+        const eventTag = feed.event ? [feed.event] : [];
+        const allTags = [...new Set([...eventTag, ...contentTags])];
+        const tagsHtml = allTags.map(tag => `
+          <span class="hashtag" onclick="location.href='tag-feed.html?tag=${encodeURIComponent(tag)}'">#${tag}</span>
+        `).join(' ');
   
         feedsDiv.innerHTML += `<div class="feed">
         <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
@@ -995,21 +1019,29 @@ async function loadFeeds(endpoint, pageArg = null) {
           ${feed.record ? ` - ${feed.record}` : ''}
         </div>
       
-        <p>${feed.content || ''}</p>
+       <p>${linkifyHashtags(feed.content || '')}</p>
+
         ${mediaHTML}
+        <!-- ✅ 태그 모음 보여주기 -->
+    <div class="feed-tags">${tagsHtml}</div>
+    
+
+    <div class="actions">
+      <button class="like-btn ${likedClass}" id="like-btn-${feed.id}" onclick="likeFeed(${feed.id})">❤️ ${likeCount}</button>
+      
+      <button id="comment-btn-${feed.id}" onclick="commentFeed(${feed.id})" class="icon-btn">
+        <span>💬</span> <span id="comment-count-${feed.id}">${commentCount}</span>
+      </button>
+      ${isMyFeed ? `<button class="edit-btn" onclick="location.href='feed-edit.html?feedId=${feed.id}'">✏️</button>` : ''}
+
+      ${isMyFeed ? `<button class="icon-btn" onclick="deleteFeed(${feed.id})">🗑️</button>` : ''}
+    </div>
+
+    <div id="comments-${feed.id}" class="comments"></div>
+  </div>`;
+});
         
-        <div class="actions">
-          <button class="like-btn ${likedClass}" id="like-btn-${feed.id}" onclick="likeFeed(${feed.id})">❤️ ${likeCount}</button>
-          <button id="comment-btn-${feed.id}" onclick="commentFeed(${feed.id})" class="icon-btn">
-            <span>💬</span> <span id="comment-count-${feed.id}">${commentCount}</span>
-          </button>
-          ${isMyFeed ? `<button class="icon-btn" onclick="deleteFeed(${feed.id})">🗑️</button>` : ''}
-        </div>
-      
-        <div id="comments-${feed.id}" class="comments"></div>
-      </div>`;
-      
-      });
+
   
       await setupVideoObservers();
       page++;
