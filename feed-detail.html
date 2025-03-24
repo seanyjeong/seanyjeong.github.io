@@ -68,6 +68,20 @@
   font-size: 1.6rem;       /* 가운데만 살짝 강조 */
   transform: translateY(-4px); /* 약간 위로 띄우면 감성 😎 */
 }
+.hashtag {
+  color: #007bff;
+  cursor: pointer;
+}
+.hashtag:hover {
+  text-decoration: underline;
+}
+.feed-tags {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #777;
+}
+
+
   </style>
 </head>
 <body>
@@ -108,11 +122,22 @@
 
 <!-- ✅ Swiper + 전역 댓글 기능 포함 js 불러오기 -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script src="js/main.js"></script>
+
 <script>
 
-</script>
-<script src="js/main.js"></script>
-<script>
+function linkifyHashtags(text) {
+  return text.replace(/#(\S+)/g, (match, tag) => {
+    return `<span class="hashtag" onclick="location.href='tag-feed.html?tag=${encodeURIComponent(tag)}'">${match}</span>`;
+  });
+}
+function extractHashtags(text) {
+  const matches = text.match(/#(\S+)/g) || [];
+  return matches.map(tag => tag.replace('#', '')).filter((v, i, a) => a.indexOf(v) === i);
+}
+
+
   async function loadMyProfileImageForNav() {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("user_id");
@@ -144,6 +169,28 @@
 </script>
 
 <script>
+async function deleteFeed(feedId) {
+  if (!confirm("정말 이 피드를 삭제하시겠습니까?")) return;
+
+  const res = await fetch(`${api}/delete-feed`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + localStorage.getItem('token'),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ feed_id: feedId })
+  });
+
+  const result = await res.json();
+  if (res.ok) {
+    alert("삭제 완료!");
+    location.href = 'profile-feed.html';
+  } else {
+    alert("삭제 실패: " + (result.error || '알 수 없는 오류'));
+  }
+}
+
+
   function getQueryParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(param);
@@ -211,7 +258,13 @@
   } catch (e) {
     console.error('❌ 미디어 파싱 오류:', e);
   }
-
+  const contentTags = extractHashtags(feed.content || '');
+const eventTag = feed.event ? [feed.event] : [];
+const allTags = [...new Set([...eventTag, ...contentTags])];
+const tagsHtml = allTags.map(tag =>
+  `<span class="hashtag" onclick="location.href='tag-feed.html?tag=${encodeURIComponent(tag)}'">#${tag}</span>`
+).join(' ');
+const isMyFeed = localStorage.getItem('user_id') == feed.user_id;
   container.innerHTML = `
   <div class="feed">
     <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
@@ -229,15 +282,19 @@
     </div>
 
     <!-- ✅ 메모/내용 -->
-    <p>${feed.content || ''}</p>
-    
+    <p>${linkifyHashtags(feed.content || '')}</p>
     ${mediaHTML}
+    <div class="feed-tags">${tagsHtml}</div>
 
     <div class="actions">
       <button class="like-btn" id="like-btn-${feed.id}" onclick="likeFeed(${feed.id})">❤️ ${feed.like_count || 0}</button>
+      
       <button id="comment-btn-${feed.id}" onclick="commentFeed(${feed.id}, true)" class="icon-btn">
         <span>💬</span> <span id="comment-count-${feed.id}">${feed.comment_count || 0}</span>
       </button>
+
+      ${isMyFeed ? `<button class="edit-btn" onclick="location.href='feed-edit.html?feedId=${feed.id}'">✏️</button>` : ''}
+      ${isMyFeed ? `<button class="icon-btn" onclick="deleteFeed(${feed.id})">🗑️</button>` : ''}
     </div>
 
     <div id="comments-${feed.id}" class="comments"></div>
