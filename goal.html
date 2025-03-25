@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>목표 기록 설정</title>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'SUIT', sans-serif;
+      padding-bottom: 80px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h2 {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .goal-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .goal-row label {
+      flex: 1;
+      font-weight: 600;
+    }
+    .goal-row input {
+      flex: 2;
+      padding: 6px;
+    }
+    .save-btn {
+      width: 100%;
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📌 종목별 목표 기록 설정</h2>
+
+  <form id="goalForm">
+    <div class="goal-row">
+      <label for="goal-제자리멀리뛰기">제자리멀리뛰기 (cm)</label>
+      <input type="number" id="goal-제자리멀리뛰기" step="any" placeholder="예: 250">
+    </div>
+    <div class="goal-row">
+      <label for="goal-메디신볼던지기">메디신볼던지기 (m)</label>
+      <input type="number" id="goal-메디신볼던지기" step="any">
+    </div>
+    <div class="goal-row">
+      <label for="goal-배근력">배근력 (Kg)</label>
+      <input type="number" id="goal-배근력" step="any">
+    </div>
+    <div class="goal-row">
+      <label for="goal-20m왕복달리기">20m왕복달리기 (초)</label>
+      <input type="number" id="goal-20m왕복달리기" step="any">
+    </div>
+    <div class="goal-row">
+      <label for="goal-윗몸일으키기">윗몸일으키기 (회)</label>
+      <input type="number" id="goal-윗몸일으키기" step="any">
+    </div>
+
+    <button type="submit" class="save-btn">💾 저장하기</button>
+  </form>
+
+  <script>
+    const api = 'https://supermax.kr/feed';
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    };
+
+    const events = ['제자리멀리뛰기', '메디신볼던지기', '배근력', '20m왕복달리기', '윗몸일으키기'];
+
+    async function fetchGoals() {
+      const res = await fetch(`${api}/my-goals`, { headers });
+      const data = await res.json();
+      data.forEach(g => {
+        const input = document.getElementById(`goal-${g.event}`);
+        if (input) input.value = g.goal_record;
+      });
+    }
+
+    async function saveGoals(e) {
+      e.preventDefault();
+      const goals = events.map(event => {
+        const value = parseFloat(document.getElementById(`goal-${event}`).value);
+        return isNaN(value) ? null : { event, goal_record: value };
+      }).filter(Boolean);
+
+      const res = await fetch(`${api}/update-goals`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ goals })
+      });
+
+      if (res.ok) {
+        alert("🎉 목표 기록이 저장되었습니다!");
+        location.href = 'profile-feed.html';
+      } else {
+        alert("❌ 저장 실패");
+      }
+    }
+
+    document.getElementById('goalForm').addEventListener('submit', saveGoals);
+    fetchGoals();
+  </script>
+</body>
+</html>
