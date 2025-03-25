@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>내 기록 추이</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <style>
+    body {
+      padding-bottom: 80px;
+      font-family: 'SUIT', sans-serif;
+    }
+    .chart-container {
+      max-width: 100%;
+      margin-top: 24px;
+    }
+    select {
+      font-size: 1rem;
+      padding: 6px 10px;
+    }
+    canvas {
+      background: #fff;
+      border-radius: 8px;
+    }
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  display: flex;
+  justify-content: space-around; /* ✅ 버튼 균등하게 배치 */
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid #ccc;
+  z-index: 999;
+}
+
+.bottom-nav button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;  /* ✅ 적당한 크기로 줄이기 */
+  padding: 4px;
+  flex: 1;
+  text-align: center;
+}
+.bottom-nav .plus-btn {
+  font-size: 1.6rem;       /* 가운데만 살짝 강조 */
+  transform: translateY(-4px); /* 약간 위로 띄우면 감성 😎 */
+}
+
+
+
+  </style>
+</head>
+<body>
+  <h2>📊 나의 기록 추이</h2>
+
+  <label for="eventSelect">종목 선택</label>
+  <select id="eventSelect"></select>
+
+  <div class="chart-container">
+    <canvas id="recordChart" height="300"></canvas>
+  </div>
+
+  <script>
+    const api = 'https://supermax.kr/feed';
+    const token = localStorage.getItem('token');
+    const headers = { 'Authorization': 'Bearer ' + token };
+    let allRecords = [];
+    let chart;
+
+    async function fetchRecords() {
+      const res = await fetch(`${api}/my-records`, { headers });
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("❌ API 응답 실패:", text);
+        return;
+      }
+      const data = await res.json();
+      allRecords = data;
+
+      const uniqueEvents = [...new Set(data.map(r => r.event))];
+      const select = document.getElementById('eventSelect');
+      select.innerHTML = uniqueEvents.map(e => `<option value="${e}">${e}</option>`).join('');
+
+      drawChart(uniqueEvents[0]);
+      select.addEventListener('change', (e) => drawChart(e.target.value));
+    }
+    async function loadMyProfileImageForNav() {
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("user_id");
+
+  if (!token || !userId) return;
+
+  try {
+    const res = await fetch("https://supermax.kr/feed/user-info", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ user_id: userId })
+    });
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+    document.getElementById("nav-profile-img").src = data.profile_image || "https://placehold.co/32x32";
+  } catch (e) {
+    console.warn("❌ 프로필 이미지 불러오기 실패:", e);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadMyProfileImageForNav();
+});
+
+
+    function drawChart(eventName) {
+      const reverseEvents = ['20m왕복달리기', '100m달리기', '달리기'];
+      const units = {
+        '제자리멀리뛰기': 'cm',
+        '메디신볼던지기': 'm',
+        '배근력': 'Kg',
+        '20m왕복달리기': '초',
+        '윗몸일으키기': '회'
+      };
+
+      const shouldReverse = reverseEvents.includes(eventName);
+      const unit = units[eventName] || '';
+
+      const records = allRecords.filter(r => r.event === eventName);
+      const labels = records.map(r => new Date(r.created_at).toLocaleDateString());
+      const values = records.map(r => parseFloat(r.record));
+
+      const ctx = document.getElementById('recordChart').getContext('2d');
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: `${eventName} 기록 (${unit})`,
+            data: values,
+            fill: false,
+            tension: 0.2,
+            borderColor: 'rgb(75, 192, 192)',
+            pointBackgroundColor: 'rgb(75, 192, 192)',
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+            title: { display: true, text: `${eventName} 변화 추이` },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.parsed.y} ${unit}`;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              reverse: shouldReverse,
+              ticks: {
+                callback: function(value) {
+                  return value + ' ' + unit;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    fetchRecords();
+  </script>
+<div class="bottom-nav">
+    <button onclick="location.href='index.html'">
+      <!-- home.svg -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    </button>
+
+    <button onclick="location.href='upload.html'" title="업로드">
+      <!-- plus.svg -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+    </button>
+    <button onclick="location.href='record-chart.html'" title="기록차트">
+      <!-- video.svg -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-spline"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 16c.5-2 1.5-7 4-7 2 0 2 3 4 3 2.5 0 4.5-5 5-7"/></svg>
+    
+      <button onclick="location.href='profile-feed.html'">
+      <img id="nav-profile-img" src="https://placehold.co/32x32" alt="내 프로필" style="width: 32px; height: 32px; border-radius: 50%;" />
+    </button>
+    
+  </div>
+</body>
+</html>
