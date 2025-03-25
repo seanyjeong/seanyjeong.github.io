@@ -80,11 +80,14 @@
   return matched ? parseFloat(matched.goal_record) : null;
 }
 
-function hasAchievedGoal(records, goalValue) {
-  const achieved = records.some(record => record >= goalValue);
-  console.log("📈 목표 달성 여부:", achieved); // 로그 확인
-  return achieved;
+function hasAchievedGoal(records, goalValue, isReverse = false) {
+  return records.some(record => {
+    return isReverse
+      ? record <= goalValue   // ✅ 작을수록 좋은 종목은 작으면 OK
+      : record >= goalValue; // ✅ 클수록 좋은 종목은 크면 OK
+  });
 }
+
 
 
 
@@ -190,7 +193,11 @@ async function drawChart(eventName) {
   const values = records.map(r => parseFloat(r.record));
 
   const goalValue = await fetchGoal(eventName);
-  const achievedGoal = hasAchievedGoal(values, goalValue); // 목표 달성 여부 확인
+   // ✅ 먼저 선언!
+   const shouldReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(eventName);
+
+// ✅ 그 다음에 사용!
+const achievedGoal = hasAchievedGoal(values, goalValue, shouldReverse);
   console.log("📈 목표 달성 여부:", achievedGoal); // 목표 달성 여부 로그 확인
 
   const predictions = await fetchPrediction();
@@ -198,12 +205,15 @@ async function drawChart(eventName) {
   const predLabels = predictionPoints.map(p => new Date(p.x * 1000).toLocaleDateString());
   const predValues = predictionPoints.map(p => p.y);
 
-  const shouldReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(eventName);
+
   const goalDate = goalValue ? getGoalDate(predictionPoints, goalValue, shouldReverse) : null;
 
-  // 목표 달성 첫 번째 날짜 계산
-  const achievedGoalDateIndex = values.findIndex(value => value >= goalValue);
-  const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateIndex] : null;
+// 목표 달성 첫 번째 날짜 계산 (✅ 리버스 반영됨!)
+const achievedGoalDateIndex = values.findIndex(value =>
+  shouldReverse ? value <= goalValue : value >= goalValue
+);
+const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateIndex] : null;
+
 
   // 슬럼프 구간 확인: 예측값이 목표값을 밑돌고 있는지 확인
   const slumpIndex = predictionPoints.findIndex(p => p.y < goalValue);
@@ -213,6 +223,7 @@ async function drawChart(eventName) {
   const newGoalDate = slumpDetected
     ? getGoalDate(predictionPoints.slice(slumpIndex), goalValue, shouldReverse) // 슬럼프 이후 예측
     : goalDate || achievedGoalDate; // 슬럼프 없으면 기존 목표 도달일 유지
+    
 
   // 타이틀 설정: 목표 달성 여부에 따라 타이틀 다르게 설정
   const titleText = achievedGoal
