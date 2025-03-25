@@ -158,10 +158,12 @@ async function addFeed() {
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
       body: formData
     });
-
     if (res.ok) {
-      const data = await res.json();
-      console.log("✅ 업로드 성공:", data);
+  const data = await res.json();
+  console.log("✅ 업로드 성공:", data);
+
+  // ✅ 목표 달성 확인 및 저장 시도
+  await checkAndSaveGoalAchievement(event, record);
       location.href = 'index.html';
     } else {
       const err = await res.json();
@@ -176,6 +178,53 @@ async function addFeed() {
     uploadBtn.innerText = '업로드';
   }
 }
+
+async function checkAndSaveGoalAchievement(event, record) {
+  const token = localStorage.getItem('token');
+  const user_id = localStorage.getItem('user_id');
+
+  const headers = {
+    "Authorization": "Bearer " + token,
+    "Content-Type": "application/json"
+  };
+
+  // 현재 목표 불러오기
+  const goalRes = await fetch("https://supermax.kr/feed/my-goals", { headers });
+  const goals = await goalRes.json();
+  const matched = goals.find(g => g.event === event);
+  if (!matched) return;
+
+  const goalValue = parseFloat(matched.goal_record);
+  if (isNaN(goalValue)) return;
+
+  if (parseFloat(record) >= goalValue) {
+    const body = {
+      user_id,
+      event,
+      goal_value: goalValue,
+      goal_record: parseFloat(record),
+      goal_date: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      const res = await fetch("https://supermax.kr/feed/save-achievement-if-new", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      const result = await res.json();
+      if (result.saved) {
+        console.log("🎯 목표 달성 기록 저장 완료!");
+      } else {
+        console.log("📌 이미 저장된 목표거나 무시됨");
+      }
+    } catch (err) {
+      console.error("🔥 목표 저장 실패:", err);
+    }
+  }
+}
+
 </script>
 
 </body>
