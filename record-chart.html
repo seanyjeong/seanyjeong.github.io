@@ -71,6 +71,57 @@
     const headers = { 'Authorization': 'Bearer ' + token };
     let allRecords = [];
     let chart;
+    
+    
+    async function fetchGoal(eventName) {
+  const res = await fetch("https://supermax.kr/feed/my-goals", { headers });
+  const goals = await res.json();
+  const matched = goals.find(g => g.event === eventName);
+  return matched ? parseFloat(matched.goal_record) : null;
+}
+
+function hasAchievedGoal(records, goalValue) {
+  const achieved = records.some(record => record >= goalValue);
+  console.log("📈 목표 달성 여부:", achieved); // 로그 확인
+  return achieved;
+}
+
+
+
+function getGoalDate(predictions, goalValue, isReverse = false) {
+  // 기존에 목표값에 도달한 시점 찾기
+  for (let p of predictions) {
+    if ((isReverse && p.y <= goalValue) || (!isReverse && p.y >= goalValue)) {
+      return new Date(p.x * 1000).toLocaleDateString(); // 목표 도달일 계산
+    }
+  }
+
+  // 도달 못했을 때 → 목표 값에 근접하도록 추정
+  const last = predictions[predictions.length - 1];
+  const secondLast = predictions[predictions.length - 2];
+
+  if (!last || !secondLast) return null;
+
+  const delta = last.y - secondLast.y; // 증가 / 감소 폭
+  const isIncreasing = isReverse ? delta < 0 : delta > 0;
+
+  if (!isIncreasing || delta === 0) return null;
+
+  // 목표값까지 얼마나 더 증가할 것인가 예측
+  const remaining = isReverse ? last.y - goalValue : goalValue - last.y;
+  const stepsNeeded = remaining / Math.abs(delta);
+  const timeGap = last.x - secondLast.x;
+  const estimatedX = last.x + timeGap * stepsNeeded;
+
+  return new Date(estimatedX * 1000).toLocaleDateString(); // 예측된 목표 도달일 반환
+}
+
+
+
+
+
+
+
 
     async function fetchRecords() {
       const res = await fetch(`${api}/my-records`, { headers });
@@ -118,67 +169,119 @@ document.addEventListener("DOMContentLoaded", () => {
   loadMyProfileImageForNav();
 });
 
-
-    function drawChart(eventName) {
-      const reverseEvents = ['20m왕복달리기', '100m달리기', '달리기'];
-      const units = {
-        '제자리멀리뛰기': 'cm',
-        '메디신볼던지기': 'm',
-        '배근력': 'Kg',
-        '20m왕복달리기': '초',
-        '윗몸일으키기': '회'
-      };
-
-      const shouldReverse = reverseEvents.includes(eventName);
-      const unit = units[eventName] || '';
-
-      const records = allRecords.filter(r => r.event === eventName);
-      const labels = records.map(r => new Date(r.created_at).toLocaleDateString());
-      const values = records.map(r => parseFloat(r.record));
-
-      const ctx = document.getElementById('recordChart').getContext('2d');
-      if (chart) chart.destroy();
-
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: `${eventName} 기록 (${unit})`,
-            data: values,
-            fill: false,
-            tension: 0.2,
-            borderColor: 'rgb(75, 192, 192)',
-            pointBackgroundColor: 'rgb(75, 192, 192)',
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true },
-            title: { display: true, text: `${eventName} 변화 추이` },
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  return `${context.parsed.y} ${unit}`;
-                }
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              reverse: shouldReverse,
-              ticks: {
-                callback: function(value) {
-                  return value + ' ' + unit;
-                }
-              }
-            }
-          }
-        }
-      });
+async function fetchPrediction() {
+  const res = await fetch("https://supermax.kr/feed/ai-predict", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
     }
+  });
+
+  const data = await res.json();
+  console.log("📈 AI 예측 결과:", data);
+  return data;
+}
+
+
+
+async function drawChart(eventName) {
+  const records = allRecords.filter(r => r.event === eventName);
+  const labels = records.map(r => new Date(r.created_at).toLocaleDateString());
+  const values = records.map(r => parseFloat(r.record));
+
+  const goalValue = await fetchGoal(eventName);
+  const achievedGoal = hasAchievedGoal(values, goalValue); // 목표 달성 여부 확인
+  console.log("📈 목표 달성 여부:", achievedGoal); // 목표 달성 여부 로그 확인
+
+  const predictions = await fetchPrediction();
+  const predictionPoints = predictions[eventName] || [];
+  const predLabels = predictionPoints.map(p => new Date(p.x * 1000).toLocaleDateString());
+  const predValues = predictionPoints.map(p => p.y);
+
+  const shouldReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(eventName);
+  const goalDate = goalValue ? getGoalDate(predictionPoints, goalValue, shouldReverse) : null;
+
+  // 목표 달성 첫 번째 날짜 계산
+  const achievedGoalDateIndex = values.findIndex(value => value >= goalValue);
+  const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateIndex] : null;
+
+  // 슬럼프 구간 확인: 예측값이 목표값을 밑돌고 있는지 확인
+  const slumpIndex = predictionPoints.findIndex(p => p.y < goalValue);
+  const slumpDetected = slumpIndex !== -1;
+
+  // 슬럼프 이후 목표 달성일을 다시 예측
+  const newGoalDate = slumpDetected
+    ? getGoalDate(predictionPoints.slice(slumpIndex), goalValue, shouldReverse) // 슬럼프 이후 예측
+    : goalDate || achievedGoalDate; // 슬럼프 없으면 기존 목표 도달일 유지
+
+  // 타이틀 설정: 목표 달성 여부에 따라 타이틀 다르게 설정
+  const titleText = achievedGoal
+    ? `${eventName} 변화 추이 📅 목표 달성! (🎯 목표 달성일: ${achievedGoalDate || 'N/A'})`
+    : `${eventName} 변화 추이 (📅 목표 도달 예상일: ${newGoalDate || '목표 도달 불가'})`;
+
+  // 차트 그리기
+  const ctx = document.getElementById('recordChart').getContext('2d');
+  if (chart) chart.destroy();
+
+  const datasets = [
+    {
+      label: `${eventName} 기록`,
+      data: values,
+      borderColor: 'rgb(75, 192, 192)',
+      pointBackgroundColor: 'rgb(75, 192, 192)',
+      tension: 0.2
+    },
+    {
+      label: 'AI 예측',
+      data: new Array(values.length).fill(null).concat(predValues),
+      borderDash: [5, 5],
+      borderColor: 'orange',
+      pointBackgroundColor: 'orange',
+      tension: 0.2
+    }
+  ];
+
+  // 목표선 수평선 추가
+  if (goalValue) {
+    datasets.push({
+      label: `🎯 목표 기록 (${goalValue})`,
+      data: new Array(labels.length + predLabels.length).fill(goalValue),
+      borderColor: 'red',
+      borderWidth: 1,
+      borderDash: [3, 3],
+      pointRadius: 0,
+      fill: false
+    });
+  }
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [...labels, ...predLabels],
+      datasets
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true },
+        title: { display: true, text: titleText }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          reverse: shouldReverse
+        }
+      }
+    }
+  });
+}
+
+
+
+
+
+
+
 
     fetchRecords();
   </script>
