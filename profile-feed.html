@@ -68,6 +68,7 @@
         <span onclick="logout()">🚪 로그아웃</span>
       </div>
       
+      
     <!-- 소개글 표시 -->
 <p id="profile-intro" style="margin-top: 10px; font-size: 0.9rem; color: #555;"></p>
 
@@ -146,30 +147,37 @@
     }
 
     const data = await res.json();
+
+    // 이름, 소개글, 프로필 이미지 표시
     document.getElementById("profile-name").innerText = data.name || "사용자";
-document.getElementById("profile-intro").innerText = data.intro || '';
-if (userId === myUserId) {
-  document.getElementById("edit-intro-btn").style.display = "inline";
-  document.getElementById("edit-intro-btn").onclick = () => {
-    // 편집 모드 진입
-    document.getElementById("intro-edit-area").style.display = "block";
-    document.getElementById("intro-textarea").value = data.intro || '';
-  };
-}
-
-
+    document.getElementById("profile-intro").innerText = data.intro || '';
     document.getElementById("profile-image").src = data.profile_image || "https://placehold.co/100x100";
-    // document.getElementById("nav-profile-img").src = data.profile_image || "https://placehold.co/32x32";
 
+    // 🔥 로그인한 사용자 본인일 경우에만 버튼들 보여줌
     if (userId === myUserId) {
-      document.getElementById("edit-profile-btn").style.display = "inline-block";
-      document.getElementById("logout-btn").style.display = "inline-block";
+      // 소개글 편집 버튼
+      document.getElementById("edit-intro-btn").style.display = "inline";
+      document.getElementById("edit-intro-btn").onclick = () => {
+        document.getElementById("intro-edit-area").style.display = "block";
+        document.getElementById("intro-textarea").value = data.intro || '';
+      };
+
+      // profile-actions에 버튼 동적으로 삽입
+      document.querySelector(".profile-actions").innerHTML = `
+        <span onclick="location.href='profile.html'">✏️ 프로필 수정</span>
+        <span onclick="location.href='goal.html'">📌 목표 설정</span>
+        <span onclick="logout()">🚪 로그아웃</span>
+      `;
+    } else {
+      // 내 계정이 아닐 경우 버튼 숨김
+      document.querySelector(".profile-actions").style.display = "none";
     }
 
   } catch (e) {
     console.error("❌ 유저 정보 불러오기 실패", e);
   }
 }
+
 async function saveIntro() {
   const intro = document.getElementById("intro-textarea").value;
   const token = localStorage.getItem("token");
@@ -253,6 +261,57 @@ function getUnit(event) {
   return '';
 }
 
+async function loadUserGoals() {
+  const list = document.getElementById("goal-list");
+
+  try {
+    let res;
+
+    if (userId === myUserId) {
+      // ✅ 내 계정일 때
+      res = await fetch(`${api}/my-goals`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+    } else {
+      // ✅ 다른 사람 계정일 때
+      res = await fetch(`${api}/user-goals/${userId}`);
+    }
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+
+    if (data.length === 0) {
+      list.innerHTML = '<li style="color: #888;">설정된 목표가 없습니다.</li>';
+      return;
+    }
+
+    list.innerHTML = data.map(goal => {
+      const unit = getUnit(goal.event);
+      return `<li>${goal.event}: ${goal.goal_record}${unit}</li>`;
+    }).join('');
+  } catch (e) {
+    console.error("🎯 목표 기록 불러오기 실패", e);
+    list.innerHTML = '<li style="color: #888;">불러오기 실패</li>';
+  }
+}
+
+async function loadUserMedals() {
+  try {
+    const res = await fetch(`${api}/user-achievements/${userId}`);
+    if (!res.ok) return;
+
+    const medals = await res.json();
+    const medalCount = medals.length;
+    const medalIcons = '🏅'.repeat(medalCount);
+
+    const nameEl = document.getElementById("profile-name");
+    nameEl.innerHTML += `<span style="font-size: 1rem; margin-left: 6px;">${medalIcons}</span>`;
+  } catch (e) {
+    console.error("🏅 메달 불러오기 실패", e);
+  }
+}
+
 
 
 
@@ -314,6 +373,8 @@ function getUnit(event) {
   await loadUserProfile(); // ← 로그인된 상태면 프로필 정보 불러오기
   await loadFeeds();       // ← 유저 피드 출력
   await loadUserGoals();
+  await loadUserMedals(); // 🏅 누적 메달 표시 추가
+
 });
 
   </script>
