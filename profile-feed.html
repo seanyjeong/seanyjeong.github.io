@@ -36,6 +36,24 @@
       font-size: 1.6rem;       /* 가운데만 살짝 강조 */
       transform: translateY(-4px); /* 약간 위로 띄우면 감성 😎 */
     }
+    .profile-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+    font-size: 0.95rem;
+    color: #555;
+  }
+
+  .profile-actions span {
+    cursor: pointer;
+    text-decoration: underline dotted;
+    font-weight: 500;
+  }
+
+  .profile-actions span:hover {
+    color: #222;
+  }
     
     </style>
 </head>
@@ -44,12 +62,12 @@
     <div class="profile-header" style="text-align: center; margin-bottom: 20px;">
       <img id="profile-image" src="https://placehold.co/100x100" alt="프로필 이미지" style="width: 100px; height: 100px; border-radius: 50%;">
       <h2 id="profile-name">사용자이름</h2>
-      <div style="margin-top: 10px;">
-        <button id="edit-profile-btn" onclick="location.href='profile.html'" style="display: none;">프로필 수정</button>
-
-        <button id="logout-btn" onclick="logout()" style="display: none; margin-left: 10px;">로그아웃</button>
+      <div class="profile-actions">
+        <span onclick="location.href='profile.html'">✏️ 프로필 수정</span>
+        <span onclick="location.href='goal.html'">📌 목표 설정</span>
+        <span onclick="logout()">🚪 로그아웃</span>
       </div>
-    </div>
+      
     <!-- 소개글 표시 -->
 <p id="profile-intro" style="margin-top: 10px; font-size: 0.9rem; color: #555;"></p>
 
@@ -58,6 +76,14 @@
       style="display: none; font-size: 0.85rem; color: #888; text-decoration: underline dotted; cursor: pointer;">
   ✏️ 소개글 편집
 </span>
+<!-- 소개글 아래에 추가 -->
+<div id="goal-summary" style="margin-top: 12px; font-size: 0.9rem; color: #333;">
+  <strong>🎯 나의 목표 기록</strong>
+  <ul id="goal-list" style="padding-left: 16px; margin-top: 6px;"></ul>
+</div>
+
+
+
 
 
 <!-- textarea + 저장 버튼 (초기에는 숨김) -->
@@ -196,6 +222,37 @@ async function loadMyProfileImageForNav() {
     console.warn("👤 내 프로필 이미지 불러오기 실패", e);
   }
 }
+async function loadUserGoals() {
+  const res = await fetch(`${api}/my-goals`, {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+
+  if (!res.ok) return;
+
+  const data = await res.json();
+  const list = document.getElementById("goal-list");
+
+  if (data.length === 0) {
+    list.innerHTML = '<li style="color: #888;">설정된 목표가 없습니다.</li>';
+    return;
+  }
+
+  list.innerHTML = data.map(goal => {
+    const unit = getUnit(goal.event);
+    return `<li>${goal.event}: ${goal.goal_record}${unit}</li>`;
+  }).join('');
+}
+
+// 단위 처리
+function getUnit(event) {
+  if (event.includes('멀리')) return 'cm';
+  if (event.includes('메디신')) return 'm';
+  if (event.includes('배근')) return 'kg';
+  if (event.includes('달리기')) return '초';
+  if (event.includes('윗몸')) return '회';
+  return '';
+}
+
 
 
 
@@ -256,6 +313,7 @@ async function loadMyProfileImageForNav() {
   await loadMyProfileImageForNav();  // ✅ 이게 핵심!
   await loadUserProfile(); // ← 로그인된 상태면 프로필 정보 불러오기
   await loadFeeds();       // ← 유저 피드 출력
+  await loadUserGoals();
 });
 
   </script>
