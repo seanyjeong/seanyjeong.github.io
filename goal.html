@@ -61,6 +61,10 @@
       <label for="goal-윗몸일으키기">윗몸일으키기 (회)</label>
       <input type="number" id="goal-윗몸일으키기" step="any">
     </div>
+    <div class="goal-row">
+        <label for="goal-좌전굴">좌전굴(Cm)</label>
+        <input type="number" id="goal-좌전굴" step="any">
+      </div>
 
     <button type="submit" class="save-btn">💾 저장하기</button>
   </form>
@@ -73,7 +77,55 @@
       'Content-Type': 'application/json'
     };
 
-    const events = ['제자리멀리뛰기', '메디신볼던지기', '배근력', '20m왕복달리기', '윗몸일으키기'];
+    const events = ['제자리멀리뛰기', '메디신볼던지기', '배근력', '20m왕복달리기', '윗몸일으키기','좌전굴'];
+
+    // 종목별 최소 향상 기준 설정
+const minImprovementMap = {
+  '제자리멀리뛰기': 5,        // cm
+  '배근력': 10,               // kg
+  '윗몸일으키기': 3,          // 회
+  '메디신볼던지기': 0.5,      // m
+  '좌전굴': 3,                // cm
+  '20m왕복달리기': 0.1        // 초 (역방향)
+};
+const minGoalMap = {
+  '남': {
+    '제자리멀리뛰기': 265,
+    '배근력': 200,
+    '윗몸일으키기': 65,
+    '메디신볼던지기': 10,
+    '좌전굴': 15,
+    '20m왕복달리기': 15
+  },
+  '여': {
+    '제자리멀리뛰기': 200,
+    '배근력': 120,
+    '윗몸일으키기': 55,
+    '메디신볼던지기': 7,
+    '좌전굴': 18,
+    '20m왕복달리기': 17.0
+  }
+};
+
+let userGender = '남'; // 기본값
+
+
+
+async function fetchUserGender() {
+  const res = await fetch(`${api}/user-info`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ user_id: localStorage.getItem("user_id") })
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    const korMap = { male: '남', female: '여' };
+    userGender = korMap[data.gender] || '남';
+  }
+}
+
+
 
     async function fetchGoals() {
       const res = await fetch(`${api}/my-goals`, { headers });
@@ -84,29 +136,105 @@
       });
     }
 
-    async function saveGoals(e) {
-      e.preventDefault();
-      const goals = events.map(event => {
-        const value = parseFloat(document.getElementById(`goal-${event}`).value);
-        return isNaN(value) ? null : { event, goal_record: value };
-      }).filter(Boolean);
+ async function saveGoals(e) {
+  e.preventDefault();
 
-      const res = await fetch(`${api}/update-goals`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ goals })
-      });
+  const goalRes = await fetch(`${api}/my-goals`, { headers });
+  const achievedRes = await fetch(`${api}/my-achievements`, { headers });
 
-      if (res.ok) {
-        alert("🎉 목표 기록이 저장되었습니다!");
-        location.href = 'profile-feed.html';
-      } else {
-        alert("❌ 저장 실패");
-      }
-    }
+  const currentGoals = await goalRes.json();  // [{event, goal_record}]
+  const achievedGoals = await achievedRes.json(); // [{event, goal_value}]
+
+  const currentGoalMap = Object.fromEntries(currentGoals.map(g => [g.event, g.goal_record]));
+  const achievedMap = Object.fromEntries(achievedGoals.map(g => [g.event, g.goal_value]));
+
+  const goals = [];
+
+  for (let event of events) {
+    const inputEl = document.getElementById(`goal-${event}`);
+    const newVal = parseFloat(inputEl.value);
+    if (isNaN(newVal)) continue;
+
+    const oldGoal = parseFloat(currentGoalMap[event] || 0);
+const achievedRecord = parseFloat(achievedMap[event] || 0);
+const achieved = achievedMap[event] !== undefined;
+
+    const isReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(event);
+
+    if (achieved) {
+  const achievedRecord = parseFloat(achievedMap[event]); // ✅ 달성한 기록 기준
+
+  // 1. 목표를 더 낮추려는 경우 → 달성 기록보다 낮게 설정 ❌
+  if (
+    (!isReverse && newVal < achievedRecord) ||
+    (isReverse && newVal > achievedRecord)
+  ) {
+    alert(`🚫 [${event}] 이미 달성한 기록(${achievedRecord}${getUnit(event)})보다 낮게 설정할 수 없습니다!`);
+    return;
+  }
+
+  // 2. 너무 살짝만 향상시킨 경우 → 의미 있는 향상만 허용
+  const minDiff = minImprovementMap[event] || (isReverse ? 0.1 : 5);
+  const diff = Math.abs(newVal - achievedRecord);
+const notEnough = isReverse
+  ? (newVal >= achievedRecord || diff < minDiff)
+  : (newVal <= achievedRecord || diff < minDiff);
+
+
+  if (notEnough) {
+    alert(`⚠️ [${event}] 기존 달성 기록(${achievedRecord}${getUnit(event)})보다 최소 ${minDiff}${getUnit(event)} ${isReverse ? '줄여야' : '올려야'} 의미 있어요.`);
+    return;
+  }
+}
+
+
+
+const minGoal = minGoalMap[userGender]?.[event];
+if (minGoal !== undefined) {
+  const isBelow = isReverse ? newVal > minGoal : newVal < minGoal;
+  if (isBelow) {
+    alert(`🚫 [${event}] ${userGender} 최소 목표는 ${minGoal}${getUnit(event)} 이상이어야 합니다.`);
+    return;
+  }
+}
+
+
+
+
+    // 유효하면 추가
+    goals.push({ event, goal_record: newVal });
+  }
+
+  // 저장
+  const res = await fetch(`${api}/update-goals`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ goals })
+  });
+
+  if (res.ok) {
+    alert("🎉 목표 기록이 저장되었습니다!");
+    location.href = 'profile-feed.html';
+  } else {
+    alert("❌ 저장 실패");
+  }
+}
+
+function getUnit(event) {
+  if (event.includes('멀리') || event.includes('좌전굴')) return 'cm';
+  if (event.includes('배근')) return 'kg';
+  if (event.includes('달리기')) return '초';
+  if (event.includes('메디신')) return 'm';
+  if (event.includes('윗몸')) return '회';
+  return '';
+}
+
+
 
     document.getElementById('goalForm').addEventListener('submit', saveGoals);
-    fetchGoals();
+    fetchUserGender().then(() => {
+  fetchGoals();
+});
   </script>
 </body>
 </html>
