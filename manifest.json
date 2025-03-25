@@ -2,7 +2,8 @@
     "name": "MAX LOUNGE",
     "short_name": "MAX",
     "description": "너의 성장을 담다.",
-    "start_url": "/",
+   "start_url": "./?v=2",
+
     "display": "standalone",
     "background_color": "#ffffff",
     "theme_color": "#222222",
