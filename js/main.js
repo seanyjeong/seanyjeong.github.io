@@ -510,18 +510,25 @@ async function commentFeed(feedId, forceOpen = false) {
   let commentHTML = "";
 
   // ✅ 댓글 입력창 먼저 추가!
-  commentHTML += `
+commentHTML += `
   <div style="margin-bottom: 10px;">
+    <!-- 댓글 입력줄 -->
     <div class="emoji-trigger-wrapper" style="display: flex; align-items: center; gap: 6px;">
       <input type="text" id="comment-input-${feedId}" placeholder="댓글 입력..." style="flex: 1;">
-<div style="display: flex; align-items: center; gap: 10px; font-size: 1.2rem; margin-top: 4px;">
-  <label for="comment-file-${feedId}" style="cursor: pointer;">📷</label>
-  <input type="file" id="comment-file-${feedId}" accept="image/*,video/*" style="display: none;">
+    </div>
 
-  <span onclick="setupEmojiPicker('comment-input-${feedId}', this)" style="cursor: pointer;">😊</span>
-  <span onclick="addComment(${feedId})" style="cursor: pointer;">✏️</span>
-</div>
-<div id="preview-${feedId}" style="margin-top: 5px;"></div>
+    <!-- 아이콘 버튼 줄 -->
+    <div style="display: flex; align-items: center; gap: 10px; font-size: 1.2rem; margin-top: 4px;">
+      <label for="comment-file-${feedId}" style="cursor: pointer;">📷</label>
+      <input type="file" id="comment-file-${feedId}" accept="image/*,video/*" style="display: none;">
+      <span onclick="setupEmojiPicker('comment-input-${feedId}', this)" style="cursor: pointer;">😊</span>
+      <span onclick="addComment(${feedId})" style="cursor: pointer;">✏️</span>
+    </div>
+
+    <!-- ✅ 프리뷰는 반드시 flex 바깥 -->
+    <div id="preview-${feedId}" class="comment-media" style="margin-top: 5px;"></div>
+
+    <!-- 이모지 박스 -->
     <div id="emoji-picker-comment-input-${feedId}" class="emoji-picker"></div>
   </div>
 `;
@@ -685,16 +692,24 @@ function toggleReplyInput(commentId, feedId) {
     // ✅ 입력창을 기존 댓글 아래에 바로 삽입
     replyContainer.innerHTML = `
     <div class="reply-input-wrapper" style="margin-top: 6px;">
+      <!-- 입력창 -->
       <input type="text" id="reply-input-field-${commentId}" placeholder="답글 입력..." 
         style="width: 100%; padding: 6px 8px; font-size: 0.9rem; border: 1px solid #ccc; border-radius: 6px;">
   
-<div style="display: flex; align-items: center; gap: 10px; margin-top: 4px; font-size: 1.2rem;">
-  <label for="reply-media-${commentId}" style="cursor: pointer;">📷</label>
-  <span onclick="setupEmojiPicker('reply-input-field-${commentId}', this)" style="cursor: pointer;">😊</span>
-  <span onclick="addComment(${feedId}, ${commentId})" style="cursor: pointer;">✏️</span>
-</div>
-<div id="emoji-picker-reply-input-field-${commentId}" class="emoji-picker"></div>
-      <div id="reply-preview-${commentId}" style="margin-top: 5px;"></div>
+      <!-- 버튼줄 -->
+      <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px; font-size: 1.2rem;">
+        <label for="reply-media-${commentId}" style="cursor: pointer;">📷</label>
+        <input type="file" id="reply-media-${commentId}" accept="image/*,video/*" style="display: none;">
+
+        <span onclick="setupEmojiPicker('reply-input-field-${commentId}', this)" style="cursor: pointer;">😊</span>
+        <span onclick="addComment(${feedId}, ${commentId})" style="cursor: pointer;">✏️</span>
+      </div>
+  
+      <!-- ✅ 프리뷰는 flex 밖으로 따로! -->
+      <div id="reply-preview-${commentId}" class="comment-media" style="margin-top: 5px;"></div>
+  
+      <!-- 이모지 박스 -->
+      <div id="emoji-picker-reply-input-field-${commentId}" class="emoji-picker"></div>
     </div>
   `;
   
