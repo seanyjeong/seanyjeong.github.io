@@ -18,7 +18,6 @@
       z-index: 9999;
       opacity: 0;
     }
-
     .emoji-picker {
       margin-top: 5px;
       padding: 5px;
@@ -26,89 +25,121 @@
       border-radius: 8px;
       background: #f9f9f9;
     }
-
     .emoji-picker span {
       font-size: 20px;
       cursor: pointer;
       margin: 3px;
     }
+
+    /* 🟦 해시태그 입력 미러링 */
+    .input-wrapper {
+  position: relative;
+  border: 1px solid #ccc;      /* ✅ 테두리 직접 줘버리기 */
+  border-radius: 6px;
+}
+.input-wrapper:focus-within {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+
+
+    .tag-preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  pointer-events: none;
+  padding: 8px;
+  font-size: 1rem;
+  line-height: 1.4;
+  width: 100%;
+  height: 100%;
+  color: black;              /* ✅ 기본 글씨는 검정 */
+  z-index: 1;
+}
+
+.tag-preview .hashtag {
+  color: #007bff;
+  font-weight: bold;
+}
+
+    .tag-preview .hashtag {
+      color: #007bff;
+      font-weight: bold;
+    }
+    #feed-content-input {
+  color: transparent;       /* ✅ 텍스트는 투명하게 */
+  caret-color: black;       /* ✅ 커서는 보이게 */
+  background: transparent;
+  position: relative;
+  z-index: 2;
+}
+
+
   </style>
 </head>
 <body>
 
   <h2>새 피드 작성</h2>
 
-  <!-- ✅ 종목 선택 -->
   <label for="event">실기종목</label>
   <select id="event" required>
     <option value="">-- 선택하세요 --</option>
-    <option value="제자리멀리뛰기">제자리멀리뛰기 (Cm)</option>
+    <option value="제자리멀리뛰기">제자리멀리뛰기 (cm)</option>
     <option value="메디신볼던지기">메디신볼 던지기 (m)</option>
     <option value="배근력">배근력 (kg)</option>
     <option value="20m왕복달리기">20m 왕복달리기 (초)</option>
     <option value="윗몸일으키기">윗몸일으키기 (횟수)</option>
-    <option value="좌전굴">좌전굴 (Cm)</option>
   </select>
-  
-  <!-- ✅ 기록 입력 -->
+
   <label for="record">기록</label>
   <input type="text" id="record" placeholder="예: 222" required>
-  
-  <!-- ✅ 메모/내용 -->
-  <textarea id="feed-content-input" placeholder="메모나 코멘트 (선택사항)" style="width:100%; height:100px;"></textarea>
+
+  <!-- ✅ 해시태그 미러링 -->
+  <label for="feed-content-input">메모나 코멘트 (선택사항)</label>
+  <div class="input-wrapper" style="height: 100px;">
+    <div id="tag-preview" class="tag-preview"></div>
+    <textarea id="feed-content-input" placeholder="메모나 코멘트" style="height: 100px;"></textarea>
+  </div>
+
   <button onclick="toggleEmojiPicker('feed-content-input')">😊</button>
   <div id="emoji-picker-feed-content-input" class="emoji-picker"></div>
-  
-  <!-- ✅ 미디어 선택 (선택사항) -->
+
   <input type="file" id="file" multiple>
-  
-  <!-- ✅ 업로드 버튼 -->
   <button id="upload-btn" onclick="addFeed()">업로드</button>
   <button onclick="location.href='index.html'">이전</button>
-  
-
-<!-- ✅ textarea ID 수정해서 JS와 맞춤
-<textarea id="feed-content-input" placeholder="내용을 입력하세요" style="width:100%; height:100px;"></textarea><br>
-<button onclick="toggleEmojiPicker('feed-content-input')">😊</button>
-<div id="emoji-picker-feed-content-input" class="emoji-picker"></div>
-
-<input type="file" id="file" multiple>
-<button id="upload-btn" onclick="addFeed()">업로드</button>
-<button onclick="location.href='index.html'">이전</button> -->
 
 <script>
 const api = 'https://supermax.kr/feed';
 
-// ✅ 공용 이모지 배열
+// ✅ 이모지 관련
 const emojis = ['😀','😂','😍','😎','😭','👍','🙏','🔥','🎉','💪'];
 
-// ✅ 이모지 삽입 함수
 function insertEmoji(inputId, emoji) {
   const input = document.getElementById(inputId);
   if (input) {
     input.value += emoji;
     input.focus();
+    updatePreview(); // 이모지 추가 시에도 미러링 반영
   }
 }
 
-// ✅ 이모지 피커 토글 함수
 function toggleEmojiPicker(inputId) {
   const pickerId = `emoji-picker-${inputId}`;
   const picker = document.getElementById(pickerId);
 
-  // 열려 있으면 닫기
   if (picker.innerHTML.trim() !== "") {
     picker.innerHTML = '';
     return;
   }
 
-  // 이모지 목록 표시
   picker.innerHTML = emojis.map(e => `
     <span onclick="insertEmoji('${inputId}', '${e}')">${e}</span>
   `).join('');
 }
 
-// ✅ 토스트 메시지 표시
+// ✅ 토스트 메시지
 function showToast(msg) {
   const toast = document.createElement('div');
   toast.className = 'toast';
@@ -130,7 +161,6 @@ async function addFeed() {
   uploadBtn.disabled = true;
   uploadBtn.innerText = '⏳ 업로드 중...';
 
-  // ✅ 여기에 ↓↓↓ 바로 들어간다!!
   const event = document.getElementById('event').value;
   const record = document.getElementById('record').value;
 
@@ -152,19 +182,16 @@ async function addFeed() {
     }
   }
 
-  // ✅ 이후 fetch 시작
   try {
     const res = await fetch(`${api}/add-feed`, {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
       body: formData
     });
-    if (res.ok) {
-  const data = await res.json();
-  console.log("✅ 업로드 성공:", data);
 
-  // ✅ 목표 달성 확인 및 저장 시도
-  await checkAndSaveGoalAchievement(event, record);
+    if (res.ok) {
+      const data = await res.json();
+      console.log("✅ 업로드 성공:", data);
       location.href = 'index.html';
     } else {
       const err = await res.json();
@@ -180,52 +207,22 @@ async function addFeed() {
   }
 }
 
-async function checkAndSaveGoalAchievement(event, record) {
-  const token = localStorage.getItem('token');
-  const user_id = localStorage.getItem('user_id');
+// ✅ 해시태그 미러링 처리
+const textarea = document.getElementById('feed-content-input');
+const preview = document.getElementById('tag-preview');
 
-  const headers = {
-    "Authorization": "Bearer " + token,
-    "Content-Type": "application/json"
-  };
+textarea.addEventListener('input', updatePreview);
 
-  // 현재 목표 불러오기
-  const goalRes = await fetch("https://supermax.kr/feed/my-goals", { headers });
-  const goals = await goalRes.json();
-  const matched = goals.find(g => g.event === event);
-  if (!matched) return;
+function updatePreview() {
+  const value = textarea.value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/#([가-힣\w]+)/g, '<span class="hashtag">#$1</span>')
+;
 
-  const goalValue = parseFloat(matched.goal_record);
-  if (isNaN(goalValue)) return;
-
-  if (parseFloat(record) >= goalValue) {
-    const body = {
-      user_id,
-      event,
-      goal_value: goalValue,
-      goal_record: parseFloat(record),
-      goal_date: new Date().toISOString().split('T')[0]
-    };
-
-    try {
-      const res = await fetch("https://supermax.kr/feed/save-achievement-if-new", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body)
-      });
-
-      const result = await res.json();
-      if (result.saved) {
-        console.log("🎯 목표 달성 기록 저장 완료!");
-      } else {
-        console.log("📌 이미 저장된 목표거나 무시됨");
-      }
-    } catch (err) {
-      console.error("🔥 목표 저장 실패:", err);
-    }
-  }
+  preview.innerHTML = value + '\n';
 }
-
 </script>
 
 </body>
