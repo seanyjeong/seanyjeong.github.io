@@ -1,219 +1,227 @@
 .comment-wrapper {
-    margin-bottom: 14px;
-  }
-  
-  .comment-box {
-    background: #f2f4f8;
-    border-radius: 10px;
-    padding: 10px;
-    border: 1px solid #ddd;
-  }
-  
-  .comment-wrapper.reply {
-    margin-left: 20px;
-    background: #eef2f7;
-  }
-  
-  .comment {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 5px;
-  }
-  
-  .comment-left {
-    flex: 1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    overflow-wrap: break-word;
-  }
-  
-  .comment-left strong {
-    display: inline;
-    font-weight: bold;
-    margin-right: 4px;
-  }
-  
-  .comment-right {
-    display: flex;
-    align-items: center;
-  }
-  
-  .comment-actions {
-    display: flex;
-    gap: 6px;
-    margin-left: auto;
-  }
-  
-  .comment-media {
-    margin-top: 6px;
-    margin-left: 5px;
-  }
-  
-  .reply-container {
-    margin-top: 6px;
-    margin-left: 20px;
-  }
-  
-  .reply-input {
-    margin-top: 5px;
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-  
-  .reply-input input {
-    flex: 1;
-    padding: 5px;
-  }
-  
-  .reply-btn,
-  .like-comment-btn,
-  .delete-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.8rem;
-    color: #555;
-    padding: 2px 6px;
-    margin: 0;
-  }
-  
-  .reply-btn {
-    color: blue;
-  }
-  
-  .delete-btn {
-    color: red;
-  }
-  
-  .like-comment-btn.liked {
-    color: red;
-    font-weight: bold;
-  }
+  margin-bottom: 14px;
+}
+
+.comment-box {
+  background: #f2f4f8;
+  border-radius: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+.comment-wrapper.reply {
+  margin-left: 20px;
+  background: #eef2f7;
+}
+
+.comment {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+
+.comment-left {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow-wrap: break-word;
+}
+
+.comment-left strong {
+  display: inline;
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+.comment-right {
+  display: flex;
+  align-items: center;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.comment-media {
+  margin-top: 6px;
+  margin-left: 5px;
+}
+
+.reply-container {
+  margin-top: 6px;
+  margin-left: 20px;
+}
+
+.reply-input {
+  margin-top: 5px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.reply-input input {
+  flex: 1;
+  padding: 5px;
+}
+
+.reply-btn,
+.like-comment-btn,
+.delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #555;
+  padding: 2px 6px;
+  margin: 0;
+}
+
+.reply-btn {
+  color: blue;
+}
+
+.delete-btn {
+  color: red;
+}
+
+.like-comment-btn.liked {
+  color: red;
+  font-weight: bold;
+}
 /* 😊 이모지 버튼 */
 .emoji-icon {
-    background: none;
-    border: none;
-    font-size: 18px;
-    padding: 4px;
-    cursor: pointer;
-    line-height: 1;
-    color: #333;
-  }
-  
-  /* ✏️ 대댓글 작성 버튼 (이모지 버튼 제외한 나머지) */
-  .reply-input button:not(.emoji-icon) {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
-  
-  .reply-input button:not(.emoji-icon):hover {
-    background: #0056b3;
-  }
-  
+  background: none;
+  border: none;
+  font-size: 18px;
+  padding: 4px;
+  cursor: pointer;
+  line-height: 1;
+  color: #333;
+}
+
+/* ✏️ 대댓글 작성 버튼 (이모지 버튼 제외한 나머지) */
+.reply-input button:not(.emoji-icon) {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.reply-input button:not(.emoji-icon):hover {
+  background: #0056b3;
+}
+
+.comment-media {
+  width: 100%;
+  max-width: 100%; /* 💡 기본은 부모 영역 꽉 채우기 */
+  margin-top: 8px;
+  display: block;
+  position: relative;
+}
+@media screen and (min-width: 768px) {
   .comment-media {
-    width: 100%;
-    overflow-x: hidden;  /* 🔥 혹시 모를 스크롤 방지 */
-    display: flex;
-    justify-content: flex-start;
+    max-width: 300px;
   }
-  
+}
+
+
+
+.comment-media img,
+.comment-media video {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+  object-fit: contain;
+}
+
+
+
+.clickable-user {
+  cursor: pointer;
+  color: #007bff;
+}
+.clickable-user:hover {
+  text-decoration: underline;
+}
+
+
+
+
+
+
+@media screen and (max-width: 480px) {
+  .comment {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .comment-right {
+    margin-top: 0;
+    display: flex;
+    gap: 6px;
+  }
+
+  .reply-btn,
+  .like-comment-btn {
+    font-size: 0.75rem;
+    padding: 2px 4px;
+  }
+}
+@media screen and (max-width: 480px) {
+.reply-input {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.reply-input input {
+  width: 100%;
+}
+
+.reply-input button,
+.reply-input .emoji-icon {
+  width: auto;
+  align-self: flex-end;
+}
+
+.reply-input .emoji-icon {
+  font-size: 20px;
+  padding: 4px;
+}
+}
+@media screen and (max-width: 480px) {
   .comment-media img,
   .comment-media video {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-    display: block; /* 🔥 inline 요소가 남는 문제 방지 */
-    object-fit: contain;
-  }
-  .clickable-user {
-    cursor: pointer;
-    color: #007bff;
-  }
-  .clickable-user:hover {
-    text-decoration: underline;
-  }
-  
-  
-
-  
-  
-  
-  @media screen and (max-width: 480px) {
-    .comment {
-      flex-direction: row;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-  
-    .comment-right {
-      margin-top: 0;
-      display: flex;
-      gap: 6px;
-    }
-  
-    .reply-btn,
-    .like-comment-btn {
-      font-size: 0.75rem;
-      padding: 2px 4px;
-    }
-  }
-@media screen and (max-width: 480px) {
-  .reply-input {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-
-  .reply-input input {
-    width: 100%;
-  }
-
-  .reply-input button,
-  .reply-input .emoji-icon {
-    width: auto;
-    align-self: flex-end;
-  }
-
-  .reply-input .emoji-icon {
-    font-size: 20px;
-    padding: 4px;
+    max-width: 95%;  /* 💡 살짝 여백 두고 싶을 경우 */
+    margin: 0 auto;  /* 가운데 정렬 */
   }
 }
 @media screen and (max-width: 480px) {
-    .comment-media img,
-    .comment-media video {
-      max-width: 95%;  /* 💡 살짝 여백 두고 싶을 경우 */
-      margin: 0 auto;  /* 가운데 정렬 */
-    }
-  }
-@media screen and (max-width: 480px) {
-  .emoji-trigger-wrapper {
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 6px;
-  }
-
-  .emoji-trigger-wrapper input[type="text"] {
-    flex: 1 1 100%;
-    min-width: 0;
-  }
-
-  .emoji-trigger-wrapper label,
-  .emoji-trigger-wrapper button {
-    flex: 0 0 auto;
-  }
+.emoji-trigger-wrapper {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
 }
-  
-  
+
+.emoji-trigger-wrapper input[type="text"] {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.emoji-trigger-wrapper label,
+.emoji-trigger-wrapper button {
+  flex: 0 0 auto;
+}
+}
+
