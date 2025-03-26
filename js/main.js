@@ -1311,13 +1311,32 @@ document.body.addEventListener("change", (e) => {
   if (previewDiv) {
     previewDiv.innerHTML = ""; // 초기화
     const url = URL.createObjectURL(file);
-    previewDiv.innerHTML = file.type.startsWith("video")
+  
+    const mediaHTML = file.type.startsWith("video")
       ? `<video src="${url}" controls style="max-width: 300px; border-radius: 8px;"></video>`
       : `<img src="${url}" style="max-width: 300px; border-radius: 8px;">`;
+  
+    previewDiv.innerHTML = `
+      <div class="preview-container" style="position: relative; display: inline-block;">
+        ${mediaHTML}
+        <button class="cancel-preview" onclick="cancelPreview('${previewDiv.id}', '${e.target.id}')"
+          style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">
+          ✖
+        </button>
+      </div>
+    `;
   } else {
     console.warn("😢 previewDiv 못 찾음:", e.target.id);
   }
 });
+
+
+function cancelPreview(previewId, inputId) {
+  const preview = document.getElementById(previewId);
+  const input = document.getElementById(inputId);
+  if (preview) preview.innerHTML = '';
+  if (input) input.value = '';
+}
 
 function setupFilePreviewListener() {
   document.querySelectorAll("input[type='file']").forEach(input => {
