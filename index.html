@@ -68,6 +68,11 @@
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.260.0/dist/umd/lucide.min.js"></script>
 
+<!-- 관리자 전용 버튼 (JS로 조건부 렌더링됨) -->
+<button id="admin-button" onclick="location.href='admin.html'" title="관리자 페이지"
+  style="display: none;">
+  🛠 관리자
+</button>
 
 
 <!-- ✅ index.html 중간 피드 section 위에 추가 -->
@@ -275,9 +280,22 @@ setInterval(checkNotifications, 10000); // 10초마다 체크
 }
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   checkNotifications(); 
   loadMyProfileImageForNav();
+
+  // ✅ 관리자 토큰 확인
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload?.username === 'admin') {
+      document.getElementById("admin-button").style.display = "inline-block";
+    }
+  } catch (e) {
+    console.warn("❌ 관리자 토큰 확인 실패:", e);
+  }
 });
 
 
