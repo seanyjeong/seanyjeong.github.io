@@ -1341,9 +1341,19 @@ function setupFilePreviewListener() {
       if (previewDiv) {
         previewDiv.innerHTML = "";
         const url = URL.createObjectURL(file);
-        previewDiv.innerHTML = file.type.startsWith("video")
-          ? `<video src="${url}" controls style="max-width: 300px;"></video>`
-          : `<img src="${url}" style="max-width: 300px;">`;
+        const mediaHTML = file.type.startsWith("video")
+          ? `<video src="${url}" controls style="max-width: 300px; border-radius: 8px;"></video>`
+          : `<img src="${url}" style="max-width: 300px; border-radius: 8px;">`;
+
+        previewDiv.innerHTML = `
+          <div class="preview-container" style="position: relative; display: inline-block;">
+            ${mediaHTML}
+            <button class="cancel-preview" onclick="cancelPreview('${previewDiv.id}', '${id}')"
+              style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer;">
+              ✖
+            </button>
+          </div>
+        `;
       } else {
         console.warn("❌ previewDiv를 찾을 수 없음:", id);
       }
