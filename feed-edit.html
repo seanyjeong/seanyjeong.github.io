@@ -165,6 +165,52 @@ updateEditPreview(); // ✅ 불러오자마자 미리보기에도 반영
   }
 }
 
+async function checkAndSaveGoalAchievement(event, record) {
+  const token = localStorage.getItem('token');
+  const user_id = localStorage.getItem('user_id');
+
+  const headers = {
+    "Authorization": "Bearer " + token,
+    "Content-Type": "application/json"
+  };
+
+  const goalRes = await fetch("https://supermax.kr/feed/my-goals", { headers });
+  const goals = await goalRes.json();
+  const matched = goals.find(g => g.event === event);
+  if (!matched) return;
+
+  const goalValue = parseFloat(matched.goal_record);
+  if (isNaN(goalValue)) return;
+
+  if (parseFloat(record) >= goalValue) {
+    const body = {
+      user_id,
+      event,
+      goal_value: goalValue,
+      goal_record: parseFloat(record),
+      goal_date: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      const res = await fetch("https://supermax.kr/feed/save-achievement-if-new", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      });
+
+      const result = await res.json();
+      if (result.saved) {
+        console.log("🎯 목표 달성 기록 저장 완료!");
+      } else {
+        console.log("📌 이미 저장된 목표거나 무시됨");
+      }
+    } catch (err) {
+      console.error("🔥 목표 저장 실패:", err);
+    }
+  }
+}
+
+
 function removeMedia(url) {
   removedMedia.push(url);
   document.querySelector(`.media-preview[data-url="${url}"]`).remove();
@@ -203,6 +249,7 @@ async function submitEdit() {
     console.log("✅ 수정 결과:", result);
 
     if (res.ok) {
+      await checkAndSaveGoalAchievement(event, record); // ✅ 메달 체크 호출
       alert('피드가 수정되었습니다!');
       location.href = 'feed-detail.html?feedId=' + feedId;
     } else {
