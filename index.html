@@ -51,6 +51,14 @@
   transform: translateY(-4px); /* 약간 위로 띄우면 감성 😎 */
 }
 
+
+  @keyframes fadeinout {
+    0% { opacity: 0; transform: translateY(10px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-10px); }
+  }
+
 </style>
 
 </head>
@@ -63,10 +71,55 @@
 
 
 <!-- ✅ index.html 중간 피드 section 위에 추가 -->
-<div class="page-title">
-  <h1>일맥라운지</h1>
-  <p class="slogan">너의 성장을 담다.</p>
+<div class="page-title" style="display: flex; justify-content: space-between; align-items: center;">
+  <!-- 타이틀 + 슬로건 묶음 -->
+  <div>
+    <h1>일맥라운지</h1>
+    <p class="slogan">너의 성장을 담다.</p>
+  </div>
+
+  <!-- 🔔 알림 아이콘 영역 -->
+  <div id="notif-icon-wrapper" style="position: relative; cursor: pointer;" onclick="openNotificationCenter()">
+    <div id="notif-dropdown" style="
+  display: none;
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  width: 250px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 9999;
+"></div>
+
+    <!-- 벨 아이콘 SVG -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+      class="lucide lucide-bell">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+
+    <!-- 숫자 뱃지 -->
+    <span id="notif-count" style="
+      position: absolute;
+      top: -6px; right: -6px;
+      background: red;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: bold;
+      border-radius: 50%;
+      padding: 2px 6px;
+      display: none;
+    ">0</span>
+  </div>
 </div>
+
+  
+
 
 
 
@@ -85,6 +138,131 @@
 
 <script>
 
+function openNotificationCenter() {
+  const dropdown = document.getElementById("notif-dropdown");
+  const isOpen = dropdown.style.display === "block";
+  dropdown.style.display = isOpen ? "none" : "block";
+
+  if (!isOpen) {
+    if (!localStorage.getItem("notifOpened")) {
+      localStorage.setItem("notifOpened", "true");
+      console.log("✅ notifOpened 저장됨!");
+    }
+    loadNotifications();
+  }
+}
+
+async function loadNotifications() {
+  const res = await fetch("https://supermax.kr/feed/my-notifications", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token"),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({})
+  });
+
+  const notifs = await res.json();  // 🔥 이 줄 꼭 있어야 함!!!
+
+  const container = document.getElementById("notif-dropdown");
+
+  if (notifs.length === 0) {
+    container.innerHTML = "<div style='padding:10px; color:#888;'>알림이 없습니다</div>";
+    return;
+  }
+
+  container.innerHTML = `
+    <div style="padding: 8px 10px; font-size: 0.85rem; text-align: right; border-bottom: 1px solid #eee;">
+      <span onclick="clearNotifications()" style="cursor: pointer; color: #888;">🗑 알림 지우기</span>
+    </div>
+  ` + notifs.map(n => `
+    <div onclick="goToFeed(${n.feed_id}, ${n.id})"
+         style="padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;">
+      ${n.message}
+    </div>
+  `).join('');
+}
+
+
+async function clearNotifications() {
+  await fetch("https://supermax.kr/feed/clear-notifications", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token"),
+      "Content-Type": "application/json"
+    }
+  });
+
+  // 바로 UI 초기화
+  const container = document.getElementById("notif-dropdown");
+  container.innerHTML = "<div style='padding:10px; color:#888;'>알림이 없습니다</div>";
+  
+  // 카운트 뱃지도 숨기기
+  document.getElementById("notif-count").style.display = "none";
+}
+
+
+async function goToFeed(feedId, notifId) {
+  // 읽음 처리
+  await fetch("https://supermax.kr/feed/read-notification", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token"),
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ id: notifId })
+  });
+
+  location.href = `feed-detail.html?feedId=${feedId}`;
+}
+
+
+
+
+async function checkNotifications() {
+  try {
+    const res = await fetch("https://supermax.kr/feed/my-notifications", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token"),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({})
+    });
+    const notifs = await res.json();
+
+    const countEl = document.getElementById("notif-count");
+    const prevCount = parseInt(localStorage.getItem("prevNotifCount") || "0");
+
+    if (notifs.length > 0) {
+      countEl.style.display = "inline-block";
+      countEl.innerText = notifs.length;
+
+      // ✅ 새로 생긴 알림이 있다면 토스트 띄우기
+      if (notifs.length > prevCount) {
+        showToast(`🔔 새로운 알림 ${notifs.length}개 도착!`);
+      }
+
+      // ✅ 현재 개수를 저장
+      localStorage.setItem("prevNotifCount", notifs.length.toString());
+    } else {
+      countEl.style.display = "none";
+      localStorage.setItem("prevNotifCount", "0");
+    }
+  } catch (e) {
+    console.warn("❌ 알림 체크 실패", e);
+  }
+}
+
+
+
+
+
+setInterval(checkNotifications, 10000); // 10초마다 체크
+
+
+
+
 
   async function loadMyProfileImageForNav() {
   const userId = localStorage.getItem("user_id");
@@ -97,9 +275,11 @@
 }
 
 
-  document.addEventListener("DOMContentLoaded", () => {
-    loadMyProfileImageForNav();
-  });
+document.addEventListener("DOMContentLoaded", () => {
+  checkNotifications(); 
+  loadMyProfileImageForNav();
+});
+
 
 
   lucide.createIcons();
