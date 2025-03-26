@@ -174,20 +174,39 @@ async function checkAndSaveGoalAchievement(event, record) {
     "Content-Type": "application/json"
   };
 
+  // 현재 목표 불러오기
   const goalRes = await fetch("https://supermax.kr/feed/my-goals", { headers });
   const goals = await goalRes.json();
   const matched = goals.find(g => g.event === event);
   if (!matched) return;
 
   const goalValue = parseFloat(matched.goal_record);
-  if (isNaN(goalValue)) return;
+  const currentRecord = parseFloat(record);
+  if (isNaN(goalValue) || isNaN(currentRecord)) return;
 
-  if (parseFloat(record) >= goalValue) {
+  // ✅ 현재 기록보다 높은 목표 메달 삭제 요청
+  try {
+    await fetch("https://supermax.kr/feed/delete-achievements-over-record", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        user_id,
+        event,
+        record: currentRecord
+      })
+    });
+    console.log("🧹 높은 목표 메달 삭제 시도 완료");
+  } catch (err) {
+    console.warn("⚠️ 메달 삭제 API 실패:", err);
+  }
+
+  // ✅ 현재 목표 이상이면 새 메달 저장
+  if (currentRecord >= goalValue) {
     const body = {
       user_id,
       event,
       goal_value: goalValue,
-      goal_record: parseFloat(record),
+      goal_record: currentRecord,
       goal_date: new Date().toISOString().split('T')[0]
     };
 
@@ -209,6 +228,7 @@ async function checkAndSaveGoalAchievement(event, record) {
     }
   }
 }
+
 
 
 function removeMedia(url) {
