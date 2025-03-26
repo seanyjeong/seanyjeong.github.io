@@ -29,6 +29,47 @@
       height: 24px;
       cursor: pointer;
     }
+    .input-wrapper {
+  position: relative;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+.input-wrapper:focus-within {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+}
+.tag-preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  pointer-events: none;
+  padding: 8px;
+  font-size: 1rem;
+  line-height: 1.4;
+  width: 100%;
+  height: 100%;
+  color: black;
+  z-index: 1;
+}
+.tag-preview .hashtag {
+  color: #007bff;
+  font-weight: bold;
+}
+#content {
+  position: relative;
+  background: transparent;
+  color: transparent;
+  caret-color: black;
+  padding: 8px;
+  font-size: 1rem;
+  width: 100%;
+  border: none;
+  resize: none;
+  z-index: 2;
+}
+
   </style>
 </head>
 <body>
@@ -48,7 +89,11 @@
   <input type="text" id="record" placeholder="예: 240">
 
   <label for="content">메모</label>
-  <textarea id="content" style="width: 100%; height: 100px;"></textarea>
+  <div class="input-wrapper" style="height: 100px;">
+    <div id="tag-preview" class="tag-preview"></div>
+    <textarea id="content" style="height: 100px;"></textarea>
+  </div>
+  
 
   <h4>기존 미디어</h4>
   <div id="existing-media"></div>
@@ -84,6 +129,9 @@ async function loadFeed() {
     console.log("🔍 status:", res.status);
     const feed = await res.json();
     console.log("📦 feed:", feed);
+    document.getElementById('content').value = feed.content || '';
+updateEditPreview(); // ✅ 불러오자마자 미리보기에도 반영
+
 
     if (!res.ok || feed.error) {
       alert('피드 정보를 불러올 수 없습니다.');
@@ -165,6 +213,22 @@ async function submitEdit() {
     alert("수정 요청 중 오류 발생");
   }
 }
+
+const contentTextarea = document.getElementById('content');
+const previewDiv = document.getElementById('tag-preview');
+
+contentTextarea.addEventListener('input', updateEditPreview);
+
+function updateEditPreview() {
+  const value = contentTextarea.value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/#([가-힣\w]+)/g, '<span class="hashtag">#$1</span>');
+
+  previewDiv.innerHTML = value + '\n';
+}
+
 
 document.addEventListener('DOMContentLoaded', loadFeed);
 </script>
