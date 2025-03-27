@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>내 기록 추이</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
   <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
   <style>
     body {
@@ -72,7 +74,15 @@
     let allRecords = [];
     let chart;
     
-    
+    const decimalPlacesMap = {
+  '윗몸일으키기': 0,
+  '제자리멀리뛰기': 0,
+  '배근력': 1,
+  '메디신볼던지기': 1,
+  '좌전굴': 1,
+  '20m왕복달리기': 2
+};
+ 
     async function fetchGoal(eventName) {
   const res = await fetch("https://supermax.kr/feed/my-goals", { headers });
   const goals = await res.json();
@@ -275,7 +285,27 @@ const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateInd
       responsive: true,
       plugins: {
         legend: { display: true },
-        title: { display: true, text: titleText }
+        title: { display: true, text: titleText },
+        datalabels: {
+          color: '#222',
+          font: { weight: 'bold' },
+          formatter: function (value, context) {
+            const event = eventName;
+            const decimal = decimalPlacesMap[event] ?? 1;
+            const isLastPred = context.dataset.label === 'AI 예측'
+              && context.dataIndex === context.chart.data.labels.length - 1;
+
+            if (context.dataset.label === `${event} 기록`) {
+              return value.toFixed(decimal);
+            }
+
+            if (isLastPred) {
+              return value.toFixed(decimal);
+            }
+
+            return null;
+          }
+        }
       },
       scales: {
         y: {
@@ -283,9 +313,13 @@ const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateInd
           reverse: shouldReverse
         }
       }
-    }
-  });
+    },
+    plugins: [ChartDataLabels] // ✅ 이거는 options 옆에 있는 별도 파라미터야!
+  }); // ✅ ← 여기서 진짜로 닫아야 해!
+
+  // drawChart 함수 안
 }
+
 
 
 
