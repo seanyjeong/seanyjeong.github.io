@@ -107,6 +107,17 @@ const minGoalMap = {
   }
 };
 
+// ✅ 종목별 소숫점 처리 자릿수 추가
+const decimalPlacesMap = {
+  '제자리멀리뛰기': 0,
+  '배근력': 1,
+  '윗몸일으키기': 0,
+  '메디신볼던지기': 1,
+  '좌전굴': 1,
+  '20m왕복달리기': 2
+};
+
+
 let userGender = '남'; // 기본값
 
 
@@ -125,16 +136,123 @@ async function fetchUserGender() {
   }
 }
 
+async function fetchAIRecommendedGoal(event, records) {
+  const res = await fetch('https://supermax.kr/feed/get-ai-recommended-goal', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ records })
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    return data; // { recommended_goal, confidence }
+  } else {
+    console.error('AI 추천 실패:', await res.text());
+    return null;
+  }
+}
 
 
-    async function fetchGoals() {
-      const res = await fetch(`${api}/my-goals`, { headers });
-      const data = await res.json();
-      data.forEach(g => {
-        const input = document.getElementById(`goal-${g.event}`);
-        if (input) input.value = g.goal_record;
-      });
+async function fetchGoals() {
+  // 1. 현재 목표 불러오기
+  const goalRes = await fetch(`${api}/my-goals`, { headers });
+  const goalData = await goalRes.json();
+  const goalMap = Object.fromEntries(goalData.map(g => [g.event, parseFloat(g.goal_record)]));
+
+  // 2. 목표값 input에 표시
+  goalData.forEach(g => {
+    const input = document.getElementById(`goal-${g.event}`);
+    if (input) {
+      const decimals = decimalPlacesMap[g.event] ?? 0;
+      input.value = parseFloat(g.goal_record).toFixed(decimals);
     }
+  });
+
+  // 3. 과거 달성기록 불러오기
+  const achievedRes = await fetch(`${api}/my-achievements`, { headers });
+  const achievedData = await achievedRes.json();
+
+  // 4. 달성 종목마다 AI 추천 표시
+  for (const ach of achievedData) {
+    const event = ach.event;
+    const goalRecord = parseFloat(ach.goal_record); // 예전에 달성했던 기록
+    const currentGoal = goalMap[event];
+    if (isNaN(goalRecord) || isNaN(currentGoal)) continue;
+
+    const isReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(event);
+
+    // ✅ 현재 목표를 이미 달성한 경우에만 추천 표시
+    const stillAchieved = isReverse
+      ? goalRecord <= currentGoal
+      : goalRecord >= currentGoal;
+    if (!stillAchieved) continue;
+
+    const recordsData = [
+      { record: parseFloat(ach.goal_value) },
+      { record: goalRecord }
+    ];
+
+    const recommendation = await fetchAIRecommendedGoal(event, recordsData);
+
+    if (recommendation) {
+      const input = document.getElementById(`goal-${event}`);
+      if (input) {
+        const decimals = decimalPlacesMap[event] ?? 0;
+        let recommendedGoal = parseFloat(recommendation.recommended_goal);
+
+        const minDiff = minImprovementMap[event] || (isReverse ? 0.1 : 5);
+
+        // ✅ 최소 향상 조건 보정
+        if (isReverse) {
+          if (goalRecord - recommendedGoal < minDiff) {
+            recommendedGoal = goalRecord - minDiff;
+          }
+        } else {
+          if (recommendedGoal - goalRecord < minDiff) {
+            recommendedGoal = goalRecord + minDiff;
+          }
+        }
+
+        // ✅ 성별별 최소 목표 조건 적용
+        const minGoal = minGoalMap[userGender]?.[event];
+        if (minGoal !== undefined) {
+          if (isReverse && recommendedGoal > minGoal) {
+            recommendedGoal = minGoal;
+          } else if (!isReverse && recommendedGoal < minGoal) {
+            recommendedGoal = minGoal;
+          }
+        }
+
+        recommendedGoal = recommendedGoal.toFixed(decimals);
+
+        const parent = input.parentElement;
+        const aiClass = `ai-recommendation-${event}`;
+        const oldRecDiv = parent.parentElement.querySelector(`.${aiClass}`);
+        if (oldRecDiv) oldRecDiv.remove();
+
+        const recDiv = document.createElement('div');
+        recDiv.className = `ai-recommendation ${aiClass}`;
+        recDiv.style.color = "#007bff";
+        recDiv.style.marginTop = '4px';
+        recDiv.innerHTML = `
+          👨‍💻​ AI 추천 목표: <strong>${recommendedGoal}${getUnit(event)}</strong> 
+          <br>
+          <small>최근 기록 추이를 고려했을 때 가장 현실적인 목표입니다.</small>
+        `;
+
+        recDiv.style.cursor = 'pointer';
+        recDiv.onclick = () => input.value = recommendedGoal;
+
+        parent.insertAdjacentElement('beforebegin', recDiv);
+      }
+    }
+  }
+}
+
+
+
+
+
 
  async function saveGoals(e) {
   e.preventDefault();
