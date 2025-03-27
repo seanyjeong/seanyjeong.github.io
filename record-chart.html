@@ -97,13 +97,32 @@ const colorMap = {
   '좌전굴': '#795548'
 };
 const yAxisRangeMap = {
-  '제자리멀리뛰기': { min: 150, max: 350 },
-  '메디신볼던지기': { min: 5, max: 20 },
-  '배근력': { min: 70, max:300 },
-  '윗몸일으키기': { min: 30, max: 85 },
-  '20m왕복달리기': { min: 13, max: 20 },
-  '좌전굴': { min: 0, max: 40 }
+  '제자리멀리뛰기': {
+    male:   { min: 210, max: 350 },
+    female: { min: 160, max: 280 }
+  },
+  '메디신볼던지기': {
+    male:   { min: 8, max: 18 },
+    female: { min: 5, max: 13 }
+  },
+  '배근력': {
+    male:   { min: 120, max: 300 },
+    female: { min: 80, max: 200 }
+  },
+  '윗몸일으키기': {
+    male:   { min: 40, max: 80 },
+    female: { min: 30, max: 75 }
+  },
+  '20m왕복달리기': {
+    male:   { min:12, max:17 },
+    female: { min: 14, max: 20 }
+  },
+  '좌전굴': {
+    male:   { min: 0, max: 40},
+    female: { min: 0, max: 40 }
+  }
 };
+
 
 
  
@@ -221,50 +240,54 @@ async function fetchPrediction() {
 
 
 
+async function fetchUserGender() {
+  const res = await fetch(`${api}/user-info`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ user_id: localStorage.getItem("user_id") })
+  });
+
+  if (res.ok) {
+    const data = await res.json();
+    const korMap = { male: '남', female: '여' };
+    return korMap[data.gender] || '남';  // 성별 반환 (기본값 남)
+  }
+  return '남'; // 오류 시 기본값
+}
+
 async function drawChart(eventName) {
   const records = allRecords.filter(r => r.event === eventName);
   const labels = records.map(r => new Date(r.created_at).toLocaleDateString());
   const values = records.map(r => parseFloat(r.record));
 
   const goalValue = await fetchGoal(eventName);
-   // ✅ 먼저 선언!
-   const shouldReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(eventName);
+  const shouldReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(eventName);
 
-// ✅ 그 다음에 사용!
-const achievedGoal = hasAchievedGoal(values, goalValue, shouldReverse);
-  console.log("📈 목표 달성 여부:", achievedGoal); // 목표 달성 여부 로그 확인
+  const achievedGoal = hasAchievedGoal(values, goalValue, shouldReverse);
 
   const predictions = await fetchPrediction();
   const predictionPoints = predictions[eventName] || [];
   const predLabels = predictionPoints.map(p => new Date(p.x * 1000).toLocaleDateString());
   const predValues = predictionPoints.map(p => p.y);
 
-
   const goalDate = goalValue ? getGoalDate(predictionPoints, goalValue, shouldReverse) : null;
 
-// 목표 달성 첫 번째 날짜 계산 (✅ 리버스 반영됨!)
-const achievedGoalDateIndex = values.findIndex(value =>
-  shouldReverse ? value <= goalValue : value >= goalValue
-);
-const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateIndex] : null;
+  const achievedGoalDateIndex = values.findIndex(value =>
+    shouldReverse ? value <= goalValue : value >= goalValue
+  );
+  const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateIndex] : null;
 
-
-  // 슬럼프 구간 확인: 예측값이 목표값을 밑돌고 있는지 확인
   const slumpIndex = predictionPoints.findIndex(p => p.y < goalValue);
   const slumpDetected = slumpIndex !== -1;
 
-  // 슬럼프 이후 목표 달성일을 다시 예측
   const newGoalDate = slumpDetected
-    ? getGoalDate(predictionPoints.slice(slumpIndex), goalValue, shouldReverse) // 슬럼프 이후 예측
-    : goalDate || achievedGoalDate; // 슬럼프 없으면 기존 목표 도달일 유지
-    
+    ? getGoalDate(predictionPoints.slice(slumpIndex), goalValue, shouldReverse)
+    : goalDate || achievedGoalDate;
 
-  // 타이틀 설정: 목표 달성 여부에 따라 타이틀 다르게 설정
   const titleText = achievedGoal
     ? `${eventName} 변화 추이 📅 목표 달성! (🎯 목표 달성일: ${achievedGoalDate || 'N/A'})`
     : `${eventName} 변화 추이 (📅 목표 도달 예상일: ${newGoalDate || '목표 도달 불가'})`;
 
-  // 차트 그리기
   const ctx = document.getElementById('recordChart').getContext('2d');
   if (chart) chart.destroy();
 
@@ -286,7 +309,6 @@ const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateInd
     }
   ];
 
-  // 목표선 수평선 추가
   if (goalValue) {
     datasets.push({
       label: `🎯 목표 기록 (${goalValue})`,
@@ -298,7 +320,13 @@ const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateInd
       fill: false
     });
   }
-  const yRange = yAxisRangeMap[eventName] || {};
+
+  // 여기서 성별에 맞는 값 가져오기
+  const userGender = await fetchUserGender(); // 성별 가져오기
+
+  const yRangeSet = yAxisRangeMap[eventName];
+  const yRange = yRangeSet ? yRangeSet[userGender] || {} : {};
+
   chart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -333,74 +361,63 @@ const achievedGoalDate = achievedGoalDateIndex >= 0 ? labels[achievedGoalDateInd
       },
   
       scales: {
-  y: {
-    beginAtZero: false,
-    reverse: shouldReverse,
-    ...yRange // 👈 범위 자동 적용
-  }
-}
-
+        y: {
+          beginAtZero: false,
+          reverse: shouldReverse,
+          ...yRange
+        }
+      }
     },
-    plugins: [ChartDataLabels] // ✅ 이거는 options 옆에 있는 별도 파라미터야!
-  }); // ✅ ← 여기서 진짜로 닫아야 해!
-// 🎯 목표 성취율 도넛 차트 그리기 (최고 기록 기준)
-if (goalValue && values.length > 0) {
-  const bestRecord = shouldReverse
-    ? Math.min(...values)
-    : Math.max(...values);
+    plugins: [ChartDataLabels]
+  });
 
-  const ratio = shouldReverse
-    ? goalValue / bestRecord * 100
-    : bestRecord / goalValue * 100;
+  if (goalValue && values.length > 0) {
+    const bestRecord = shouldReverse
+      ? Math.min(...values)
+      : Math.max(...values);
 
-  const percent = Math.round(Math.max(0, Math.min(100, ratio)));
+    const ratio = shouldReverse
+      ? goalValue / bestRecord * 100
+      : bestRecord / goalValue * 100;
 
-  document.getElementById('progress-text').innerText =
-    `📍 ${eventName} 성취율: ${percent}% (최고기록: ${bestRecord}, 목표: ${goalValue})`;
+    const percent = Math.round(Math.max(0, Math.min(100, ratio)));
 
-  const ctx2 = document.getElementById('progress-chart').getContext('2d');
+    document.getElementById('progress-text').innerText =
+      `📍 ${eventName} 성취율: ${percent}% (최고기록: ${bestRecord}, 목표: ${goalValue})`;
 
-  // 기존 차트 있으면 파괴
-  if (window.progressChart) window.progressChart.destroy();
+    const ctx2 = document.getElementById('progress-chart').getContext('2d');
 
-  const mainColor = colorMap[eventName] || '#007bff';
+    if (window.progressChart) window.progressChart.destroy();
 
-window.progressChart = new Chart(ctx2, {
-  type: 'doughnut',
-  data: {
-    labels: ['성취율', '남은 비율'],
-    datasets: [{
-      data: [percent, 100 - percent],
-      backgroundColor: [mainColor, '#e9ecef'],
-      borderWidth: 0
-    }]
-  },
-  options: {
-    cutout: '70%',
-    plugins: {
-      tooltip: { enabled: false },
-      legend: { display: false }
-    }
+    const mainColor = colorMap[eventName] || '#007bff';
+
+    window.progressChart = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['성취율', '남은 비율'],
+        datasets: [{
+          data: [percent, 100 - percent],
+          backgroundColor: [mainColor, '#e9ecef'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        cutout: '70%',
+        plugins: {
+          tooltip: { enabled: false },
+          legend: { display: false }
+        }
+      }
+    });
+
+  } else {
+    document.getElementById('progress-text').innerText = '📍 목표를 설정해주세요.';
+    if (window.progressChart) window.progressChart.destroy();
   }
-});
-
-} else {
-  document.getElementById('progress-text').innerText = '📍 목표를 설정해주세요.';
-  if (window.progressChart) window.progressChart.destroy();
 }
 
-  // drawChart 함수 안
-}
+fetchRecords();
 
-
-
-
-
-
-
-
-
-    fetchRecords();
   </script>
 <div class="bottom-nav">
     <button onclick="location.href='index.html'">
