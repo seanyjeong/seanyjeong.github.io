@@ -184,7 +184,10 @@ async function checkAndSaveGoalAchievement(event, record) {
   const currentRecord = parseFloat(record);
   if (isNaN(goalValue) || isNaN(currentRecord)) return;
 
-  // ✅ 현재 기록보다 높은 목표 메달 삭제 요청
+  // ✅ 역방향 이벤트 체크 추가
+  const isReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(event);
+
+  // ✅ 현재 기록보다 높은(역방향은 낮은) 목표 메달 삭제 요청
   try {
     await fetch("https://supermax.kr/feed/delete-achievements-over-record", {
       method: "POST",
@@ -192,16 +195,22 @@ async function checkAndSaveGoalAchievement(event, record) {
       body: JSON.stringify({
         user_id,
         event,
-        record: currentRecord
+        record: currentRecord,
+        isReverse  // ✅ 서버에서 이 정보 활용 필요!
       })
     });
-    console.log("🧹 높은 목표 메달 삭제 시도 완료");
+    console.log("🧹 높은(또는 낮은) 목표 메달 삭제 시도 완료");
   } catch (err) {
     console.warn("⚠️ 메달 삭제 API 실패:", err);
   }
 
-  // ✅ 현재 목표 이상이면 새 메달 저장
-  if (currentRecord >= goalValue) {
+  // ✅ 정방향 vs 역방향 목표 달성 판단 추가
+  const goalAchieved = isReverse
+    ? (currentRecord <= goalValue)   // 역방향 (작거나 같으면 달성)
+    : (currentRecord >= goalValue);  // 정방향 (크거나 같으면 달성)
+
+  // ✅ 현재 목표를 달성하면 새 메달 저장
+  if (goalAchieved) {
     const body = {
       user_id,
       event,
@@ -228,6 +237,7 @@ async function checkAndSaveGoalAchievement(event, record) {
     }
   }
 }
+
 
 
 
