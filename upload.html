@@ -229,12 +229,21 @@ async function checkAndSaveGoalAchievement(event, record) {
   const goalValue = parseFloat(matched.goal_record);
   if (isNaN(goalValue)) return;
 
-  if (parseFloat(record) >= goalValue) {
+  // ✅ 역방향 이벤트 체크 추가 (여기 추가!)
+  const isReverse = ['20m왕복달리기', '100m달리기', '달리기'].includes(event);
+  const achievedRecord = parseFloat(record);
+
+  const goalAchieved = isReverse 
+    ? (achievedRecord <= goalValue)   // 역방향이면 목표보다 작거나 같을 때 달성
+    : (achievedRecord >= goalValue);  // 정방향이면 목표보다 크거나 같을 때 달성
+
+  // ✅ 여기부터는 그대로 유지
+  if (goalAchieved) {
     const body = {
       user_id,
       event,
       goal_value: goalValue,
-      goal_record: parseFloat(record),
+      goal_record: achievedRecord,
       goal_date: new Date().toISOString().split('T')[0]
     };
 
@@ -256,6 +265,7 @@ async function checkAndSaveGoalAchievement(event, record) {
     }
   }
 }
+
 
 // ✅ 해시태그 미러링 처리
 const textarea = document.getElementById('feed-content-input');
