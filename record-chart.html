@@ -222,13 +222,22 @@ function getGoalDate(predictions, goalValue, isReverse = false) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  // ✅ 토큰 없으면 로그인 페이지로 이동
-  const token = localStorage.getItem("token");
-  if (!token) {
-    alert("로그인 후 이용 가능합니다 😊");
-    location.href = 'login.html';
-    return;
+  // 비동기 함수 따로 정의해서 호출
+  async function init() {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("로그인 후 이용 가능합니다 😊");
+      location.href = 'login.html';
+      return;
+    }
+
+    await loadMyProfileImageForNav(); // 토큰 있으면 프로필 이미지 불러오기 등 실행
+    // ... 추가 초기 로직들
   }
+
+  init(); // 호출
+});
+
 
 async function fetchPrediction() {
   const res = await fetch("https://supermax.kr/feed/ai-predict", {
