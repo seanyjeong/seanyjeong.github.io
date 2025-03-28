@@ -104,6 +104,10 @@
   line-height: 1;
   color: #333;
 }
+input, textarea {
+  font-size: 16px; /* 고정된 크기 설정 */
+}
+
 
 /* ✏️ 대댓글 작성 버튼 (이모지 버튼 제외한 나머지) */
 .reply-input button:not(.emoji-icon) {
