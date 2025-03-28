@@ -254,7 +254,7 @@ async function loadUserGoals() {
 
 // 단위 처리
 function getUnit(event) {
-  if (event.includes('멀리')) return 'cm';
+  if (event.includes('멀리') || event.includes('좌전굴')) return 'cm';
   if (event.includes('메디신')) return 'm';
   if (event.includes('배근')) return 'kg';
   if (event.includes('달리기')) return '초';
