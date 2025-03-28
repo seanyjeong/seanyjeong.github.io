@@ -77,6 +77,9 @@
 
 <!-- ✅ index.html 중간 피드 section 위에 추가 -->
 <div class="page-title" style="display: flex; justify-content: space-between; align-items: center;">
+  <!-- 비회원용 로그인/회원가입 버튼 -->
+
+
   <!-- 타이틀 + 슬로건 묶음 -->
   <div>
     <h1>일맥라운지</h1>
@@ -121,6 +124,10 @@
       display: none;
     ">0</span>
   </div>
+</div>
+<div id="guest-actions" style="display:none; margin-top: 10px; text-align: center;">
+  <button onclick="location.href='login.html'">🔐 로그인</button>
+  <button onclick="location.href='register.html'">📝 회원가입</button>
 </div>
 
   
@@ -284,10 +291,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   checkNotifications(); 
   loadMyProfileImageForNav();
 
-  // ✅ 관리자 토큰 확인
   const token = localStorage.getItem("token");
-  if (!token) return;
 
+  // ✅ ✅ ✅ 이 부분 추가!
+  if (!token) {
+    // 비회원 상태 처리
+    document.getElementById("guest-actions").style.display = "block";
+
+    // 업로드 버튼 비활성화
+    const uploadBtn = document.querySelector('.bottom-nav button[onclick*="upload.html"]');
+    if (uploadBtn) {
+      uploadBtn.onclick = () => {
+        alert("로그인 후 이용 가능합니다 😊");
+        location.href = 'login.html';
+      };
+    }
+
+    // 알림 벨 비활성화
+    const notifIcon = document.getElementById("notif-icon-wrapper");
+    if (notifIcon) {
+      notifIcon.onclick = () => {
+        alert("로그인 후 알림 확인 가능해요 😊");
+        location.href = 'login.html';
+      };
+    }
+
+    // 관리자 버튼 숨김
+    document.getElementById("admin-button").style.display = "none";
+    return; // ✅ 관리자 체크 아래 코드 실행 안 하도록 리턴!
+  }
+
+  // 관리자 체크는 로그인한 경우에만
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     if (payload?.username === 'admin') {
@@ -297,6 +331,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.warn("❌ 관리자 토큰 확인 실패:", e);
   }
 });
+
 
 
 
