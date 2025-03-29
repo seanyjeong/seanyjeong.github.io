@@ -370,7 +370,7 @@ async function loadUserFeeds(userId, userName) {
   const titleEl = document.getElementById('feeds-title');
 
   feedsDiv.innerHTML = '';
-  titleEl.innerText = `👤 ${userName}님의 피드`;
+  titleEl.innerText = `👤 ${userName}님의 Stack`;
   await loadFeeds(currentFeedEndpoint); // 여기에서 DOM 업데이트 완료됨
 
   // 불필요한 feeds 참조 코드를 제거합니다.
@@ -929,11 +929,11 @@ async function loadFeeds(endpoint, pageArg = null) {
         return;
       }
       headers['Authorization'] = 'Bearer ' + token;
-      titleEl.innerText = '👤 내 피드';
+      titleEl.innerText = '👤 My Stack';
     } else if (endpoint === '/feeds') {
-      titleEl.innerText = '📢 전체 피드';
+      titleEl.innerText = '📢 Stack Flow';
     } else if (endpoint.startsWith('/user-feeds')) {
-      titleEl.innerText = `👤 ${currentUserName}님의 피드`;
+      titleEl.innerText = `👤 ${currentUserName}님의 Stack`;
     }
   
     try {
