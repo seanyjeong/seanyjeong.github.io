@@ -61,8 +61,12 @@
 
 </style>
 <link rel="icon" type="image/png" href="https://github.com/seanyjeong/maxtargram/blob/main/s-01.png?raw=true">
+
+
 </head>
 <body>
+
+
 
     <!-- Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
@@ -81,6 +85,7 @@
 
 
   <!-- 타이틀 + 슬로건 묶음 -->
+ <!-- STAC 로고 이미지 (가로형) -->
  <div style="margin: 6px 18px;">
   <img src="https://github.com/seanyjeong/maxtargram/blob/main/stac2.png?raw=true"
        alt="STAC"
@@ -90,22 +95,40 @@
 
 
 
+
+
+
+
   <!-- 🔔 알림 아이콘 영역 -->
+<!-- 알림 + 공유 버튼 그룹 -->
+<div style="display: flex; gap: 10px; align-items: center; margin-right: 12px;">
+
+    <!-- 🔗 공유 버튼 -->
+    <button onclick="copyCurrentUrl()" title="현재 페이지 주소 복사"
+    style="background: none; border: none; padding: 0; cursor: pointer;">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+   viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+   stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link">
+<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+</svg>
+</button>
+  <!-- 🔔 알림 아이콘 -->
   <div id="notif-icon-wrapper" style="position: relative; cursor: pointer;" onclick="openNotificationCenter()">
     <div id="notif-dropdown" style="
-  display: none;
-  position: absolute;
-  top: 40px;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  border-radius: 8px;
-  width: 250px;
-  max-height: 300px;
-  overflow-y: auto;
-  z-index: 9999;
-"></div>
+      display: none;
+      position: absolute;
+      top: 40px;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      width: 250px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 9999;">
+    </div>
 
     <!-- 벨 아이콘 SVG -->
     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
@@ -114,6 +137,25 @@
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
       <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
     </svg>
+
+    <!-- 숫자 뱃지 -->
+    <span id="notif-count" style="
+      position: absolute;
+      top: -6px; right: -6px;
+      background: red;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: bold;
+      border-radius: 50%;
+      padding: 2px 6px;
+      display: none;">0</span>
+  </div>
+
+
+
+</div>
+
+    
 
     <!-- 숫자 뱃지 -->
     <span id="notif-count" style="
@@ -153,6 +195,20 @@
 <script src="js/main.js"></script>
 
 <script>
+
+
+
+  function copyCurrentUrl() {
+  const url = window.location.href;
+  navigator.clipboard.writeText(url)
+    .then(() => {
+      showToast("✅ 링크가 복사되었습니다!");
+    })
+    .catch(() => {
+      alert("❌ 복사 실패!");
+    });
+}
+
 
 function openNotificationCenter() {
   const dropdown = document.getElementById("notif-dropdown");
