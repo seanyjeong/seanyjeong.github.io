@@ -304,14 +304,27 @@ async function loadUserMedals() {
 
     const medals = await res.json();
     const medalCount = medals.length;
-    const medalIcons = '🏅'.repeat(medalCount);
+
+    let medalIcon = '';
+    if (medalCount >= 20) {
+      medalIcon = '👑';
+    } else if (medalCount >= 10) {
+      medalIcon = '🏆';
+    } else if (medalCount >= 5) {
+      medalIcon = '🥇';
+    } else if (medalCount > 0) {
+      medalIcon = '🏅'.repeat(medalCount); // 1~4개는 반복
+    }
 
     const nameEl = document.getElementById("profile-name");
-    nameEl.innerHTML += `<span style="font-size: 1rem; margin-left: 6px;">${medalIcons}</span>`;
+    if (nameEl && medalIcon) {
+      nameEl.innerHTML += `<span style="font-size: 1rem; margin-left: 6px;">${medalIcon}</span>`;
+    }
   } catch (e) {
     console.error("🏅 메달 불러오기 실패", e);
   }
 }
+
 
 
 
