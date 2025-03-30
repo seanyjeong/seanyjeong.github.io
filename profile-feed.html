@@ -318,12 +318,14 @@ async function loadUserMedals() {
 
     const nameEl = document.getElementById("profile-name");
     if (nameEl && medalIcon) {
-      nameEl.innerHTML += `<span style="font-size: 1rem; margin-left: 6px;">${medalIcon}</span>`;
+      nameEl.innerHTML += `<span title="누적 메달: ${medalCount}개\n🏅1~4개\n🥇5~9개\n🏆10~19개\n👑20개 이상"
+        style="font-size: 1rem; margin-left: 6px;">${medalIcon}</span>`;
     }
   } catch (e) {
     console.error("🏅 메달 불러오기 실패", e);
   }
 }
+
 
 
 
