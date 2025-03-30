@@ -931,7 +931,7 @@ async function loadFeeds(endpoint, pageArg = null) {
       headers['Authorization'] = 'Bearer ' + token;
       titleEl.innerText = '👤 My Stack';
     } else if (endpoint === '/feeds') {
-      titleEl.innerText = '📢 Stack Flow';
+      titleEl.innerText = '';
     } else if (endpoint.startsWith('/user-feeds')) {
       titleEl.innerText = `👤 ${currentUserName}님의 Stack`;
     }
