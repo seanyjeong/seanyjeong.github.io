@@ -5,6 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>로그인 - MaxFeed</title>
   <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
+  <style>
+    body {
+      max-width: 400px;
+      margin: 20px auto;
+      text-align: center;
+    }
+     button {
+      width: 100%; /* 모든 입력창과 버튼의 너비를 100%로 맞춤 */
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 1rem;
+    }
+    input {
+      width: 95%; /* 모든 입력창과 버튼의 너비를 100%로 맞춤 */
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 1rem;
+    }
+    .btn-group {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px; /* 버튼들 사이의 간격 */
+    }
+    .btn-group button {
+      width: 100%; /* 버튼의 너비를 48%로 설정해서 두 개가 한 줄에 잘 배치되도록 */
+    }
+  </style>
 </head>
 <body>
 
@@ -12,12 +39,26 @@
 <input type="text" id="username" placeholder="아이디">
 <input type="password" id="password" placeholder="비밀번호">
 <button onclick="login()">로그인</button>
-<button onclick="location.href='register.html'">회원가입</button>
+
+<!-- 버튼 그룹 추가: 로그인 후 비밀번호 재설정 페이지로 이동 가능 -->
+<div class="btn-group">
+  <button onclick="location.href='register.html'">회원가입</button>
+  <button onclick="location.href='reset.html'">비밀번호 재설정</button>
+</div>
 
 <script>
 const api = 'https://supermax.kr/feed';
 
 async function login() {
+  const username = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+
+  // 아이디와 비밀번호 입력이 비었는지 확인
+  if (!username || !password) {
+    alert('아이디와 비밀번호를 모두 입력해주세요.');
+    return;
+  }
+
   const res = await fetch(`${api}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -30,9 +71,7 @@ async function login() {
   const data = await res.json();
 
   if (res.ok) {
-    // ✅ 여기 안이 로그인 성공 처리 부분이야!
-    // 👇 여기에 이거 넣으면 됨:
-
+    // 로그인 성공 처리
     localStorage.setItem('token', data.token);
     localStorage.setItem('user_id', String(data.user_id));
 
@@ -43,10 +82,19 @@ async function login() {
     location.href = redirectTo;
 
   } else {
-    alert('로그인 실패');
+    // 로그인 실패 시 서버에서 제공하는 오류 메시지 표시
+    alert(`로그인 실패: ${data.message || '알 수 없는 오류가 발생했습니다.'}`);
+
+    // 필드 하이라이트 처리
+    if (data.message === "아이디가 존재하지 않습니다.") {
+      document.getElementById('username').style.border = "2px solid red";
+      document.getElementById('password').style.border = ""; // 비밀번호 필드 초기화
+    } else if (data.message === "비밀번호가 틀렸습니다.") {
+      document.getElementById('password').style.border = "2px solid red";
+      document.getElementById('username').style.border = ""; // 아이디 필드 초기화
+    }
   }
 }
-
 </script>
 
 </body>
