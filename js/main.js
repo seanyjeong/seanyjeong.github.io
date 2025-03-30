@@ -895,6 +895,37 @@ function extractHashtags(text) {
   return matches.map(tag => tag.replace('#', '')).filter((v, i, a) => a.indexOf(v) === i);
 }
 
+async function loadUserMedals(feedUserId, feedId) {
+  try {
+    const res = await fetch(`${api}/user-achievements/${feedUserId}`);
+    if (!res.ok) return;
+
+    const medals = await res.json();
+    const medalCount = medals.length;
+
+    let medalIcon = '';
+    if (medalCount >= 20) {
+      medalIcon = '👑';
+    } else if (medalCount >= 10) {
+      medalIcon = '🏆';
+    } else if (medalCount >= 5) {
+      medalIcon = '🥇';
+    } else if (medalCount > 0) {
+      medalIcon = '🏅'.repeat(medalCount); // 1~4개는 반복
+    }
+
+    const nameEl = document.getElementById(`medal-${feedId}`);
+    if (nameEl && medalIcon) {
+      nameEl.innerHTML = `<span style="font-size: 1rem; margin-left: 6px;">${medalIcon}</span>`;
+    }
+  } catch (e) {
+    console.error("🏅 메달 불러오기 실패", e);
+  }
+}
+
+
+
+
 
 
 
@@ -1006,6 +1037,7 @@ async function loadFeeds(endpoint, pageArg = null) {
         } catch (e) {
           mediaHTML = '';
         }
+
   
         const likedClass = feed.liked ? 'liked' : '';
         const likeCount = feed.like_count || 0;
@@ -1019,18 +1051,31 @@ async function loadFeeds(endpoint, pageArg = null) {
           <span class="hashtag" onclick="location.href='tag-feed.html?tag=${encodeURIComponent(tag)}'">#${tag}</span>
         `).join(' ');
   
-        feedsDiv.innerHTML += `<div class="feed">
-        <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
-          <img src="${profileImage}">
-          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-            <strong>${userName}</strong>
-            <span class="timestamp" style="font-size: 0.85rem; color: #888;">${timeAgo}</span>
+        feedsDiv.innerHTML += `
+        <div class="feed">
+          <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
+            <img src="${profileImage}">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <strong>${userName}<span id="medal-${feed.id}"></span></strong>
+              <span class="timestamp" style="font-size: 0.85rem; color: #888;">${timeAgo}</span>
+            </div>
           </div>
-        </div>
+          
       
         <!-- ✅ 여기에 종목 & 기록 표시 -->
-        <div style="margin: 6px 0; font-size: 0.92rem; color: #222;">
-          <strong>🏅 ${feed.event || '종목 없음'}</strong>
+       <div style="margin: 6px 0; font-size: 0.92rem; color: #222; display: flex; align-items: center; gap: 6px;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+       viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+       class="lucide lucide-dumbbell-icon lucide-dumbbell"
+       style="flex-shrink: 0;">
+    <path d="M14.4 14.4 9.6 9.6"/>
+    <path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"/>
+    <path d="m21.5 21.5-1.4-1.4"/>
+    <path d="M3.9 3.9 2.5 2.5"/>
+    <path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"/>
+  </svg>
+          <strong> ${feed.event || '종목 없음'}</strong>
           ${feed.record ? ` - ${feed.record}` : ''}
         </div>
       
@@ -1054,7 +1099,10 @@ async function loadFeeds(endpoint, pageArg = null) {
 
     <div id="comments-${feed.id}" class="comments"></div>
   </div>`;
+  loadUserMedals(feed.user_id, feed.id);
+
 });
+
         
 
   
