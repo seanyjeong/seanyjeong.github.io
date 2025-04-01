@@ -965,7 +965,15 @@ async function loadFeeds(endpoint, pageArg = null) {
       titleEl.innerText = '';
     } else if (endpoint.startsWith('/user-feeds')) {
       titleEl.innerText = `👤 ${currentUserName}님의 Stack`;
+    } else if (endpoint === '/recommendation') {
+      const token = localStorage.getItem('token');
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+      }
+
     }
+    
+    
   
     try {
       const res = await fetch(`${api}${endpoint}?page=${pageToUse}&limit=${limit}`, { headers });
@@ -974,10 +982,12 @@ async function loadFeeds(endpoint, pageArg = null) {
         loading = false;
         return;
       }
-  
-      const feeds = await res.json();
+      
+      const data = await res.json();
+      const feeds = data.feeds || data;  // 추천 피드이면 data.feeds, 나머진 배열 자체
+      
       if (feeds.length < limit) done = true;
-  
+      
       feeds.forEach(feed => {
         if (loadedFeedIds.has(feed.id)) return;
         loadedFeedIds.add(feed.id);
@@ -1114,13 +1124,12 @@ async function loadFeeds(endpoint, pageArg = null) {
       loading = false;
     }
   }
-async function init() {
-    console.log(`초기 페이지: ${page}`); // 정상적으로 초기값 출력
-    await loadFeeds('/feeds'); // 피드 로드
-}
-document.addEventListener('DOMContentLoaded', () => {
-    init(); // init 함수 호출
-});
+  async function init() {
+    console.log(`초기 페이지: ${page}`);
+    await loadFeeds('/recommendation'); // ✅ 추천 피드로 변경
+  }
+  
+
 
 // 스크롤 이벤트 리스너 추가
 function setupInfiniteScroll() {
@@ -1135,12 +1144,6 @@ function setupInfiniteScroll() {
   });
 }
 
-// 페이지 로드 시 무한 스크롤 설정
-document.addEventListener('DOMContentLoaded', () => {
-  setupInfiniteScroll();
-  // 초기 피드 로드 (예: 전체 피드)
-  loadFeeds('/feeds');
-});
 
 // ------------------------
 // ✅ 댓글 기능 전역 함수
@@ -1444,14 +1447,14 @@ function setupFilePreviewListener() {
 }
 
 
-
-
-
-
-
-
-
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
   checkUser();
-  // loadFeeds('/feeds');
+  setupInfiniteScroll();
+  await init(); // init 내부에 추천 피드 로드 포함됨
 });
+
+
+
+
+
+
