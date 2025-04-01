@@ -943,14 +943,14 @@ async function loadFeeds(endpoint, pageArg = null) {
     const isNewEndpoint = currentFeedEndpoint !== endpoint;
     const pageToUse = pageArg !== null ? pageArg : page;
   
-    if (isNewEndpoint && pageArg === null) {
+    if (isNewEndpoint || pageArg === 1) {
       currentFeedEndpoint = endpoint;
       page = 1;
       done = false;
       feedsDiv.innerHTML = '';
       loadedFeedIds.clear();
     }
-  
+    
     const headers = {};
     if (endpoint === '/my-feeds') {
       const token = localStorage.getItem('token');
