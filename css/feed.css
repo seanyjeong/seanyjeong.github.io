@@ -233,4 +233,22 @@
     text-decoration: underline;
   }
     
-          
+   /* Webkit 브라우저용 (Chrome, Safari) */
+body::-webkit-scrollbar {
+  width: 6px;
+}
+
+body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+body::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}
+       
