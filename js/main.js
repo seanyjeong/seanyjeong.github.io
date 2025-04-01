@@ -943,7 +943,7 @@ async function loadFeeds(endpoint, pageArg = null) {
     const isNewEndpoint = currentFeedEndpoint !== endpoint;
     const pageToUse = pageArg !== null ? pageArg : page;
   
-    if (isNewEndpoint) {
+    if (isNewEndpoint && pageArg === null) {
       currentFeedEndpoint = endpoint;
       page = 1;
       done = false;
@@ -1020,9 +1020,18 @@ async function loadFeeds(endpoint, pageArg = null) {
             const slides = mediaArray.map(url => `
               <div class="swiper-slide">
                 ${url.includes('.mp4')
-                  ? `<video class="feed-video" controls muted preload="none" loading="lazy" src="${url}"></video>`
+                  ? `<video 
+                       class="feed-video" 
+                       controls 
+                       muted 
+                       preload="metadata" 
+                       playsinline 
+                       webkit-playsinline 
+                       src="${url}">
+                     </video>`
                   : `<img src="${url}" loading="lazy">`}
               </div>`).join('');
+            
   
             const swiperId = `swiper-${feed.id}`;
             mediaHTML = `
