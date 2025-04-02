@@ -331,42 +331,60 @@ async function loadUserMedals() {
 
 
 
-    async function loadFeeds() {
-      try {
-        const res = await fetch(`${api}/user-feeds/${userId}`, {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const feeds = await res.json();
-
-        const container = document.getElementById("feeds");
-        container.innerHTML = feeds.map(feed => {
-  let media = '';
+async function loadFeeds() {
   try {
-    const mediaArray = JSON.parse(feed.media_url);
-    if (Array.isArray(mediaArray) && mediaArray.length > 0) {
-      const url = mediaArray[0];
-      media = url.includes('.mp4')
-        ? `<video src="${url}" muted preload="metadata"></video>`
-        : `<img src="${url}" alt="피드 썸네일">`;
-    } else {
-      // ✅ 기록만 있는 경우 → 기록 썸네일 만들어주기
-      media = `
+    const res = await fetch(`${api}/user-feeds/${userId}`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const feeds = await res.json();
 
-            🏅 ${feed.event || '종목 없음'}<br/>
-            ${feed.record || '기록 없음'}
+    const container = document.getElementById("feeds");
+
+    container.innerHTML = feeds
+      .filter(feed => {
+        // 🔒 비밀글은 본인만 볼 수 있게
+        return feed.is_private != 1 || userId === myUserId;
+      })
+      .map(feed => {
+        let media = '';
+
+        try {
+          const mediaArray = JSON.parse(feed.media_url || '[]');
+
+          if (Array.isArray(mediaArray) && mediaArray.length > 0) {
+            const url = mediaArray[0];
+            media = url.includes('.mp4')
+              ? `<video src="${url}" muted preload="metadata" style="width: 100%; border-radius: 6px;"></video>`
+              : `<img src="${url}" alt="피드 썸네일" style="width: 100%; border-radius: 6px;">`;
+          } else {
+            // ✅ 기록만 있는 경우 썸네일 스타일 적용
+            media = `
+              <div style="padding: 20px; text-align: center; border: 1px solid #ccc; border-radius: 8px; background: #f8f8f8;">
+                🏅 ${feed.event || '종목 없음'}<br/>
+                <strong>${feed.record || '기록 없음'}</strong>
+              </div>
+            `;
+          }
+        } catch (e) {
+          console.warn("❌ media_url 파싱 실패:", e);
+        }
+
+        // 🔒 비밀글 표시 추가 (본인에게만)
+        const lockIcon = feed.is_private == 1 && userId === myUserId ? ' 🔒' : '';
+
+        return `
+          <div class="thumbnail" onclick="location.href='feed-detail.html?feedId=${feed.id}'">
+            ${media}
+            ${lockIcon}
           </div>
-        </div>
-      `;
-    }
-  } catch {}
+        `;
+      }).join('');
 
-  return `<div class="thumbnail" onclick="location.href='feed-detail.html?feedId=${feed.id}'">${media}</div>`;
-}).join('');
+  } catch (e) {
+    console.error("❌ 피드 불러오기 실패", e);
+  }
+}
 
-      } catch (e) {
-        console.error("피드 불러오기 실패", e);
-      }
-    }
 
     function logout() {
       localStorage.removeItem('token');
