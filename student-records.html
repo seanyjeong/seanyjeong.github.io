@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>기록차트</title>
+  <!-- Chart.js & Date Adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.css">
+  <style>
+    body { max-width: 1000px; margin: auto; }
+    h1 { text-align: center; }
+    .student-info { border: 1px solid #ddd; padding: 1em; margin-top: 1em; border-radius: 8px; }
+    .graph-container { margin: 2em 0; }
+    canvas { max-width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <h1>학생 기록 차트</h1>
+
+  <label for="studentSelect">학생 선택:</label>
+  <select id="studentSelect">
+    <option value="">-- 학생을 선택하세요 --</option>
+  </select>
+
+  <div class="student-info" id="studentInfo" style="display: none">
+    <h3>학생 정보</h3>
+    <p><strong>이름:</strong> <span id="studentName"></span></p>
+    <p><strong>학교:</strong> <span id="studentSchool"></span></p>
+    <p><strong>학년:</strong> <span id="studentGrade"></span></p>
+    <p><strong>성별:</strong> <span id="studentGender"></span></p>
+  </div>
+
+  <div class="graph-container" id="chartsContainer"></div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    const API_BASE = 'https://supermax.kr/feed';
+
+    async function loadStudents() {
+      const res = await fetch(`${API_BASE}/all-students`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const students = await res.json();
+
+      const select = document.getElementById('studentSelect');
+      students.forEach(stu => {
+        const option = document.createElement('option');
+        option.value = stu.id;
+        option.textContent = `${stu.name} (${stu.school})`;
+        select.appendChild(option);
+      });
+    }
+
+    document.getElementById('studentSelect').addEventListener('change', async e => {
+      const userId = e.target.value;
+      if (!userId) return;
+      await loadStudentData(userId);
+    });
+
+    async function loadStudentData(userId) {
+      const res = await fetch(`${API_BASE}/student-records?user_id=${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        alert('학생 기록을 불러오지 못했습니다.');
+        return;
+      }
+
+      const info = data[0];
+      document.getElementById('studentName').textContent = info.name;
+      document.getElementById('studentSchool').textContent = info.school;
+      document.getElementById('studentGrade').textContent = info.grade;
+
+      // 성별 처리 (male => 남자, female => 여자)
+      const genderText = info.gender === 'male' ? '남자' : '여자';
+      document.getElementById('studentGender').textContent = genderText;
+
+      document.getElementById('studentInfo').style.display = 'block';
+
+      const records = data;
+      const events = [...new Set(records.map(r => r.event))];
+      const container = document.getElementById('chartsContainer');
+      container.innerHTML = '';
+
+      events.forEach(event => {
+        const canvas = document.createElement('canvas');
+        container.appendChild(canvas);
+
+        // 날짜별로 기록을 하나씩 표시하려면 같은 날에는 약간씩 다른 X 위치에 점을 찍는다
+        let previousDate = null;
+        let offset = 0;
+
+        // 날짜별로 기록 순서대로 점을 찍음
+        const eventData = records.filter(r => r.event === event)
+          .map((r, index) => {
+            const currentDate = new Date(r.created_at).toLocaleDateString();
+            
+            // 같은 날짜에 여러 기록이 있으면, 순차적으로 x 좌표 조정
+            if (previousDate !== currentDate) {
+              offset = 0;  // 날짜가 바뀌면 offset 초기화
+              previousDate = currentDate;
+            }
+            
+            // 날짜는 그대로 두고, 각 기록마다 순차적으로 1씩 차이 나도록 함
+            const timeShifted = new Date(r.created_at).setHours(0, 0, 0, 0) + offset;
+            offset += 1;  // 기록마다 조금씩 밀어서 점들이 겹치지 않도록
+
+            return {
+              x: timeShifted,  // 밀리초 단위로 시간 차이를 두어 점을 약간씩 이동
+              y: parseFloat(r.record)
+            };
+          });
+
+        // Dynamic width calculation based on number of data points
+        const canvasWidth = Math.max(eventData.length * 40, 600);
+        canvas.style.width = canvasWidth + 'px';
+
+        new Chart(canvas.getContext('2d'), {
+          type: 'line',
+          data: {
+            datasets: [{
+              label: `${event} 기록`,
+              data: eventData,
+              borderWidth: 2,
+              fill: false,
+              tension: 0.3
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: event
+              }
+            },
+            scales: {
+              x: {
+                type: 'linear',  // x축을 '시간' 타입이 아닌 '선형'으로 설정하여 날짜 순으로 표시
+                position: 'bottom',
+                title: { display: true, text: '날짜' },
+                ticks: {
+                  autoSkip: true,  // 너무 많은 레이블이 있을 경우 건너뛰기
+                  maxRotation: 45,   // x축 레이블 각도 설정
+                  minRotation: 30
+                }
+              },
+              y: {
+                title: { display: true, text: '기록' },
+                beginAtZero: false
+              }
+            }
+          }
+        });
+      });
+    }
+
+    loadStudents();
+  </script>
+</body>
+</html>
