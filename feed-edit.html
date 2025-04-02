@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>피드 수정</title>
+  <title>stack 수정</title>
   <link href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css" rel="stylesheet">
   <style>
     .media-preview {
@@ -101,6 +101,11 @@
 
   <h4>새로운 미디어 추가</h4>
   <input type="file" id="files" multiple>
+  <label>
+    <input type="checkbox" id="is_private">
+    🔒 비밀글로 설정
+  </label>
+  
 
   <button onclick="submitEdit()">수정 완료</button>
   <button onclick="history.back()">취소</button>
@@ -142,6 +147,8 @@ updateEditPreview(); // ✅ 불러오자마자 미리보기에도 반영
     document.getElementById('event').value = feed.event || '';
     document.getElementById('record').value = feed.record || '';
     document.getElementById('content').value = feed.content || '';
+    document.getElementById('is_private').checked = feed.is_private == 1;
+
 
     try {
       existingMedia = JSON.parse(feed.media_url || '[]');
@@ -262,6 +269,8 @@ async function submitEdit() {
   formData.append('event', event);
   formData.append('record', record);
   formData.append('existing_media', JSON.stringify(keptMedia));
+  formData.append('is_private', document.getElementById('is_private').checked ? 1 : 0);
+
 
   for (let file of fileInput.files) {
     formData.append('files', file);
