@@ -990,6 +990,8 @@ async function loadFeeds(endpoint, pageArg = null) {
       
       feeds.forEach(feed => {
         if (loadedFeedIds.has(feed.id)) return;
+        if (feed.is_private == 1 && feed.user_id != localStorage.getItem('user_id')) return;
+
         loadedFeedIds.add(feed.id);
   
         let mediaHTML = '';
@@ -1075,7 +1077,11 @@ async function loadFeeds(endpoint, pageArg = null) {
           <div class="profile clickable-user" onclick="location.href='profile-feed.html?userId=${feed.user_id}'">
             <img src="${profileImage}">
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <strong>${userName}<span id="medal-${feed.id}"></span></strong>
+          <strong>
+  ${userName}
+  ${feed.is_private == 1 ? '<span class="privacy-icon">🔒</span>' : ''}
+  <span id="medal-${feed.id}"></span>
+</strong>
               <span class="timestamp" style="font-size: 0.85rem; color: #888;">${timeAgo}</span>
             </div>
           </div>
