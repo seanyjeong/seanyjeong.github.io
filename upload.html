@@ -108,6 +108,11 @@
   <div id="emoji-picker-feed-content-input" class="emoji-picker"></div>
 
   <input type="file" id="file" multiple>
+  <label style="display: flex; align-items: center; gap: 6px; margin-top: 10px;">
+    <input type="checkbox" id="private-checkbox">
+    🔒 비밀글로 업로드
+  </label>
+  
   <button id="upload-btn" onclick="addFeed()">업로드</button>
   <button onclick="location.href='index.html'">이전</button>
 
@@ -159,6 +164,8 @@ async function addFeed() {
   const content = document.getElementById('feed-content-input').value;
   const uploadBtn = document.getElementById('upload-btn');
 
+
+
   uploadBtn.disabled = true;
   uploadBtn.innerText = '⏳ 업로드 중...';
 
@@ -177,6 +184,8 @@ async function addFeed() {
   formData.append('event', event);
   formData.append('record', record);
   formData.append('content', content);
+  const isPrivate = document.getElementById("private-checkbox").checked ? 1 : 0;
+  formData.append("is_private", isPrivate);
 
   if (fileInput.files.length) {
     for (let i = 0; i < fileInput.files.length; i++) {
