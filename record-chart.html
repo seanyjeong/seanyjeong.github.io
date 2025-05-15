@@ -305,38 +305,49 @@ async function drawChart(eventName) {
   const ctx = document.getElementById('recordChart').getContext('2d');
   if (chart) chart.destroy();
 
-  const datasets = [
-    {
-      label: `${eventName} 기록`,
-      data: values,
-      borderColor: 'rgb(75, 192, 192)',
-      pointBackgroundColor: 'rgb(75, 192, 192)',
-      tension: 0.2
-    },
-    {
-      label: 'AI 예측',
-      data: new Array(values.length).fill(null).concat(predValues),
-      borderDash: [5, 5],
-      borderColor: 'orange',
-      pointBackgroundColor: 'orange',
-      tension: 0.2
-    }
-  ];
+  // ✅ 1. X축 라벨: 실제 + 예측 날짜 합치기
+  const allLabels = [...labels, ...predLabels];
 
+  // ✅ 2. 실제 기록 dataset: 실제 구간 + 예측 구간은 null로 채움
+  const actualDataset = {
+    label: `${eventName} 기록`,
+    data: [...values, ...new Array(predLabels.length).fill(null)],
+    borderColor: 'rgb(75, 192, 192)',
+    pointBackgroundColor: 'rgb(75, 192, 192)',
+    tension: 0.2
+  };
+
+  // ✅ 3. 예측 dataset: 실제 구간은 null, 예측 구간부터 값 넣기
+  const predictionDataset = {
+    label: 'AI 예측',
+    data: [...new Array(values.length).fill(null), ...predValues],
+    borderDash: [5, 5],
+    borderColor: 'orange',
+    pointBackgroundColor: 'orange',
+    tension: 0.2
+  };
+
+  // ✅ 4. 목표선 dataset
+  let goalDataset = null;
   if (goalValue) {
-    datasets.push({
+    goalDataset = {
       label: `🎯 목표 기록 (${goalValue})`,
-      data: new Array(labels.length + predLabels.length).fill(goalValue),
+      data: new Array(allLabels.length).fill(goalValue),
       borderColor: 'red',
       borderWidth: 1,
       borderDash: [3, 3],
       pointRadius: 0,
       fill: false
-    });
+    };
   }
 
+  // ✅ 5. datasets 배열 완성
+  const datasets = goalDataset
+    ? [actualDataset, predictionDataset, goalDataset]
+    : [actualDataset, predictionDataset];
+
   // 여기서 성별에 맞는 값 가져오기
-  const userGender = await fetchUserGender(); // 성별 가져오기
+  const userGender = await fetchUserGender();
 
   const yRangeSet = yAxisRangeMap[eventName];
   const yRange = yRangeSet ? yRangeSet[userGender] || {} : {};
@@ -344,7 +355,7 @@ async function drawChart(eventName) {
   chart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: [...labels, ...predLabels],
+      labels: allLabels,
       datasets
     },
     options: {
@@ -362,18 +373,17 @@ async function drawChart(eventName) {
               && context.dataIndex === context.chart.data.labels.length - 1;
 
             if (context.dataset.label === `${event} 기록`) {
-              return value.toFixed(decimal);
+              return value != null ? value.toFixed(decimal) : null;
             }
 
             if (isLastPred) {
-              return value.toFixed(decimal);
+              return value != null ? value.toFixed(decimal) : null;
             }
 
             return null;
           }
         }
       },
-  
       scales: {
         y: {
           beginAtZero: false,
@@ -385,6 +395,7 @@ async function drawChart(eventName) {
     plugins: [ChartDataLabels]
   });
 
+  // 성취율 도넛/진행률 표시는 그대로 유지
   if (goalValue && values.length > 0) {
     const bestRecord = shouldReverse
       ? Math.min(...values)
@@ -429,6 +440,7 @@ async function drawChart(eventName) {
     if (window.progressChart) window.progressChart.destroy();
   }
 }
+
 
 fetchRecords();
 
